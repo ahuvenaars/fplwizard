@@ -1,1 +1,1 @@
-
+const KEY='fpl.mobilePlanner.v5';export function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return {}}}export function save(data){try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch{return false}}export function planFor(db,manager,gw,base){db.managers??={};db.managers[manager]??={plans:{}};const plans=db.managers[manager].plans;plans[gw]??=structuredClone(base);return plans[gw]}
