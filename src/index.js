@@ -1,3 +1,5 @@
+// ongevaarlijke wijziging
+
 const FPL_BASE = "https://fantasy.premierleague.com/api";
 const DEFAULT_MANAGER_ID = 9588528;
 const MCP_PROTOCOL_VERSION = "2025-06-18";
