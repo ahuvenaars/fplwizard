@@ -43,3 +43,5 @@ body{background:#F7F5F2;color:#151515}header{background:rgba(255,255,255,.97);bo
 
 /* MVP29 final Gameweek review refresh */
 .review-actions{display:flex;align-items:center;gap:7px}.review-actions select{width:auto}.review-actions button{padding:10px 12px}.review-status{min-height:20px;margin:-4px 0 10px;color:var(--muted);font-size:11px}.review-status b{color:#781D32}.review-final{color:#397047!important;font-weight:850}
+
+.planner-controls>#syncCurrentTeam,.planner-controls>#syncStatus{grid-column:1/-1}.planner-controls>#syncCurrentTeam{width:100%}#syncStatus{color:var(--muted);font-size:11px}#syncStatus:empty{display:none}.gw-nav[hidden]{display:none}.bottom-nav button+button{border-left:1px solid var(--line);border-radius:0}

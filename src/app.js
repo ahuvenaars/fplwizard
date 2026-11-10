@@ -23,6 +23,45 @@ function rolledFreeTransfers(gw){
   return ft;
 }
 async function openGw(gw){state.gw=gw;renderGwNav();$('#lineupTitle').textContent=`Gameweek ${gw}`;let squadSource;try{squadSource=await endpoints.squad(state.managerId,Math.min(gw,state.manager.current_gameweek))}catch{squadSource=await endpoints.squad(state.managerId,state.manager.current_gameweek)}state.baseSquad=squadSource.squad;const previous=gw>state.events[0]?.id?db.managers?.[state.managerId]?.plans?.[gw-1]:null;const previousBank=previous?Number(previous.endingBank??previous.startingBank??state.manager.bank):Number(state.manager.bank||0);const base=previous?{...structuredClone(previous),gw,startingBank:previousBank,endingBank:previousBank,transfers:[]}:{gw,startingBank:Number(state.manager.bank||0),endingBank:Number(state.manager.bank||0),players:state.baseSquad.map(p=>({...p})),starters:state.baseSquad.filter(p=>p.position_order<=11).map(p=>p.player_id),bench:state.baseSquad.filter(p=>p.position_order>11).map(p=>p.player_id),captain:state.baseSquad.find(p=>p.captain)?.player_id,vice:state.baseSquad.find(p=>p.vice_captain)?.player_id,transfers:[]};state.plan=planFor(db,state.managerId,gw,base);state.plan.startingBank=Number(state.plan.startingBank??state.manager.bank??0);state.plan.transfers??=[];state.plan.freeTransfers=rolledFreeTransfers(gw);state.plan.endingBank=plannedBank();state.plan.hitPoints=transferCost().points;state.plan.nextFreeTransfers=Math.min(5,Math.max(1,Number(state.plan.freeTransfers||0)-state.plan.transfers.length+1));await hydrate();calculate();render()}
+function officialSquadSignature(squad){return squad.map(p=>`${p.player_id}:${p.position_order}:${Number(Boolean(p.captain))}:${Number(Boolean(p.vice_captain))}`).sort().join('|')}
+function planFromOfficialSquad(gw,squadSource,manager){
+ const squad=squadSource.squad,bank=Number(squadSource.bank??manager.bank??0);
+ return{gw,startingBank:bank,endingBank:bank,players:squad.map(p=>({...p})),starters:squad.filter(p=>p.position_order<=11).map(p=>p.player_id),bench:squad.filter(p=>p.position_order>11).map(p=>p.player_id),captain:squad.find(p=>p.captain)?.player_id,vice:squad.find(p=>p.vice_captain)?.player_id,transfers:[]};
+}
+async function syncCurrentTeam(){
+ const button=$('#syncCurrentTeam'),status=$('#syncStatus');
+ button.disabled=true;button.textContent='Syncing…';status.textContent='Refreshing official team and projections…';
+ try{
+  const[g,manager,fixtures,universe]=await Promise.all([endpoints.gameweek(),endpoints.manager(state.managerId),endpoints.fixtures(),endpoints.players()]);
+  const gw=Number(manager.current_gameweek||g.events?.find(event=>event.is_current)?.id||g.events?.find(event=>!event.finished)?.id);
+  if(!Number.isInteger(gw)||gw<1||gw>38)throw new Error('Could not determine the current official Gameweek.');
+  const squadSource=await endpoints.squad(state.managerId,gw),officialSquad=squadSource.squad;
+  if(!Array.isArray(officialSquad)||officialSquad.length!==15)throw new Error(`Expected 15 players in the official squad; received ${officialSquad?.length||0}.`);
+  const previousSquad=Math.min(Number(state.gw),Number(state.manager?.current_gameweek))===gw?state.baseSquad:null;
+  const squadChanged=previousSquad?officialSquadSignature(previousSquad)!==officialSquadSignature(officialSquad):false;
+  const playerIds=new Set([...officialSquad.map(player=>Number(player.player_id)),...(state.plan?.players||[]).map(player=>Number(player.player_id))]);
+  const freshDetails=Object.fromEntries(await Promise.all([...playerIds].map(async id=>[id,await endpoints.player(id)])));
+  state.manager={...manager,bank:squadSource.bank??manager.bank};
+  state.fixtures=fixtures;state.players=universe.players;state.details=freshDetails;
+  state.completedEvents=(g.events||[]).filter(event=>event.finished).slice(-8).reverse();
+  state.events=(g.events||[]).filter(event=>!event.finished).slice(0,6);state.gw=gw;state.baseSquad=officialSquad;
+  if(squadChanged){
+   db.managers??={};db.managers[state.managerId]??={plans:{}};db.managers[state.managerId].plans??={};
+   invalidateFuturePlans();
+   db.managers[state.managerId].plans[gw]=planFromOfficialSquad(gw,squadSource,state.manager);
+  }
+  const base=planFromOfficialSquad(gw,squadSource,state.manager);
+  state.plan=squadChanged?db.managers[state.managerId].plans[gw]:planFor(db,state.managerId,gw,base);
+  state.plan.startingBank=Number(state.plan.startingBank??squadSource.bank??state.manager.bank??0);
+  state.plan.transfers??=[];state.plan.freeTransfers=rolledFreeTransfers(gw);
+  state.plan.endingBank=plannedBank();state.plan.hitPoints=transferCost().points;
+  state.plan.nextFreeTransfers=Math.min(5,Math.max(1,Number(state.plan.freeTransfers||0)-state.plan.transfers.length+1));
+  $('#teamName').textContent=manager.team_name;$('#lineupTitle').textContent=`Gameweek ${gw}`;
+  setupReview();renderGwNav();calculate();persist();render();
+  status.textContent=`Synced official GW${gw} squad and refreshed projections (1, 3 and 5 GW).${squadChanged?' Future plans were cleared because the official squad changed.':''}`;
+ }catch(error){status.textContent=`Sync failed: ${error.message}`;$('#alerts').innerHTML=`<div class="alert">${esc(error.message)}</div>`}
+ finally{button.disabled=false;button.textContent='Sync current team'}
+}
 async function hydrate(){const ids=state.plan.players.map(p=>p.player_id);await Promise.allSettled(ids.map(async id=>{if(!state.details[id])state.details[id]=await endpoints.player(id)}))}
 function fixture(p){const f=state.fixtures.find(x=>Number(x.gameweek)===state.gw&&(x.home===p.team||x.away===p.team));return f?{...f,difficulty:f.home===p.team?f.home_difficulty:f.away_difficulty,opponent:f.home===p.team?f.away:f.home,home:f.home===p.team}:null}
 function seasonLabels(){const now=new Date(),year=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;return{current:`${year}-${String(year+1).slice(-2)}`,previous:`${year-1}-${String(year).slice(-2)}`}}
@@ -117,4 +156,4 @@ function settlePredictions(){let changed=false;for(const row of state.prediction
 function calibrationStats(rows){const settled=rows.filter(r=>r.actualPoints!=null);if(!settled.length)return{n:0,mae:0,bias:0,rmse:0,minMae:0};const errors=settled.map(r=>r.actualPoints-r.predictedPoints);return{n:settled.length,mae:errors.reduce((n,e)=>n+Math.abs(e),0)/settled.length,bias:errors.reduce((n,e)=>n+e,0)/settled.length,rmse:Math.sqrt(errors.reduce((n,e)=>n+e*e,0)/settled.length),minMae:settled.reduce((n,r)=>n+Math.abs((r.actualMinutes||0)-r.predictedMinutes),0)/settled.length}}
 function renderCalibration(){settlePredictions();const stats=calibrationStats(state.predictionLog),bands=[[0,2],[2,3],[3,4],[4,5],[5,99]];$('#calibrationSummary').innerHTML=`<div class="performance-stat"><b>${stats.n}</b><span>Settled predictions</span></div><div class="performance-stat"><b>${stats.mae.toFixed(2)}</b><span>Points MAE</span></div><div class="performance-stat"><b>${stats.bias>=0?'+':''}${stats.bias.toFixed(2)}</b><span>Bias actual minus xPts</span></div><div class="performance-stat"><b>${stats.minMae.toFixed(1)}</b><span>Minutes MAE</span></div>`;$('#calibrationBands').innerHTML=bands.map(([a,b])=>{const rows=state.predictionLog.filter(r=>r.actualPoints!=null&&r.predictedPoints>=a&&r.predictedPoints<b),avg=rows.length?rows.reduce((n,r)=>n+r.actualPoints,0)/rows.length:0,pred=rows.length?rows.reduce((n,r)=>n+r.predictedPoints,0)/rows.length:0;return`<div class="calibration-band"><b>${a}-${b===99?'5+':b} xPts</b><small>N ${rows.length}</small><span>Pred ${pred.toFixed(2)}</span><span>Actual ${avg.toFixed(2)}</span></div>`}).join('');$('#calibrationRows').innerHTML=state.predictionLog.slice().reverse().slice(0,50).map(r=>`<div class="performance-row"><b>GW${r.gameweek}</b><span>${esc(r.name)}</span><span>${r.predictedPoints.toFixed(2)} xPts</span><small>${r.actualPoints==null?'Pending':`${r.actualPoints} actual`}</small></div>`).join('')||'<div class="empty-performance">Freeze a Gameweek before its deadline to start testing.</div>'}
 function setupReview(){const select=$('#reviewGw'),selected=Number(state.reviewGw||select.value||state.completedEvents?.[0]?.id);select.innerHTML=(state.completedEvents||[]).map(event=>`<option value="${event.id}">GW${event.id}${event.finished?' · Final':''}</option>`).join('');if(selected&&[...select.options].some(option=>Number(option.value)===selected))select.value=String(selected);select.onchange=()=>openReview(Number(select.value));$('#refreshReview').onclick=()=>refreshReview({force:true});document.querySelectorAll('.bottom-nav button').forEach(button=>button.onclick=()=>{const view=button.dataset.view;document.querySelectorAll('.bottom-nav button').forEach(item=>item.classList.toggle('active',item===button));document.querySelectorAll('main > :not(#reviewView):not(#performanceView):not(#calibrationView)').forEach(el=>el.hidden=view!=='planner');$('#reviewView').hidden=view!=='review';$('#performanceView').hidden=view!=='performance';$('#calibrationView').hidden=view!=='calibration';if(view==='review'){const gw=Number(select.value||state.completedEvents?.[0]?.id);if(gw)openReview(gw)}if(view==='performance')renderPerformance();if(view==='calibration')renderCalibration()})}
-$('#freezePredictions').addEventListener('click',e=>{e.preventDefault();freezePredictions()});loadPredictionLog().finally(()=>boot());
+$('#syncCurrentTeam').addEventListener('click',syncCurrentTeam);document.querySelectorAll('.bottom-nav button').forEach(button=>button.addEventListener('click',()=>{$('#gwNav').hidden=button.dataset.view!=='planner'}));$('#freezePredictions').addEventListener('click',e=>{e.preventDefault();freezePredictions()});loadPredictionLog().finally(()=>boot());
