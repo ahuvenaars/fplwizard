@@ -1,4 +1,9 @@
-const BASE='https://fplcomanager.andreashuvenaars.workers.dev';
+const IS_PRODUCTION =
+  window.location.hostname === 'fplwizard.pages.dev';
+
+const BASE = IS_PRODUCTION
+  ? 'https://fplcomanager.andreashuvenaars.workers.dev'
+  : 'https://fplcomanager-preview.andreashuvenaars.workers.dev';
 export async function api(path){const r=await fetch(BASE+path,{headers:{Accept:'application/json'},cache:'no-store'});if(!r.ok){let d='';try{d=(await r.json()).detail||''}catch{}throw new Error(`${r.status} ${d}`.trim())}return r.json()}
 async function allPlayers(){
   // The Worker clamps every /players request to 75 results. First obtain a broad seed
