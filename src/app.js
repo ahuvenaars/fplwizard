@@ -1,6 +1,6 @@
 import{endpoints}from'./api.js';import{project,bestLineup}from'./models.js';import{load,save,planFor}from'./store.js';
 const DEBUG_MODE=new URLSearchParams(window.location.search).get('debug')==='1';
-const $=s=>document.querySelector(s),db=load();const state={managerId:9588528,gw:null,events:[],manager:null,baseSquad:[],baseSquadGameweek:null,players:[],details:{},fixtures:[],plan:null,projections:{},selected:null,transferOut:null,reviewGw:null,reviewSquad:null,reviewDetails:{},switchingId:null,performanceHistory:[],teamStrength:null,teamStrengthByTeam:new Map(),previousPlayersByCode:new Map(),seasonTransitionReady:false,multiProjections:{},predictionLog:[],activeView:'planner',freeHitPlan:null,freeHitProjections:{},transferWorkspace:'planner',freeHitSaveError:''};
+const $=s=>document.querySelector(s),db=load();const state={managerId:9588528,gw:null,events:[],manager:null,baseSquad:[],baseSquadGameweek:null,players:[],details:{},fixtures:[],plan:null,projections:{},selected:null,transferOut:null,reviewGw:null,reviewSquad:null,reviewDetails:{},switchingId:null,performanceHistory:[],teamStrength:null,teamStrengthByTeam:new Map(),previousPlayersByCode:new Map(),seasonTransitionReady:false,multiProjections:{},predictionLog:[],activeView:'planner',freeHitPlan:null,freeHitProjections:{},transferWorkspace:'planner',freeHitSaveError:'',currentTeamBenchmark:null,freeHitRequest:0};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 async function boot(){try{const[g,m,fx,ps]=await Promise.all([endpoints.gameweek(),endpoints.manager(state.managerId),endpoints.fixtures(),endpoints.players()]);state.manager=m;state.fixtures=fx;state.players=ps.players;if((ps.teamCount||0)!==20||state.players.length<400)$('#alerts').innerHTML=`<div class="alert">Player universe check: ${state.players.length} players across ${ps.teamCount||0} clubs. Expected 20 clubs.</div>`;state.completedEvents=g.events.filter(x=>x.finished).slice(-8).reverse();state.events=g.events.filter(x=>!x.finished).slice(0,6);state.gw=state.events[0]?.id||g.next_gameweek?.id||m.current_gameweek;$('#teamName').textContent=m.team_name;renderSummary();renderGwNav();setupReview();await openGw(state.gw);loadPerformance().catch(()=>{});loadTeamStrength().catch(()=>{});loadSeasonTransition().catch(()=>{});refreshCompletedGameweeks().catch(()=>{})}catch(err){$('#alerts').innerHTML=`<div class="alert">${esc(err.message)}</div>`}}
 function renderSummary(){const m=state.manager,bank=state.plan?plannedBank():Number(m.bank||0);$('#summary').innerHTML=`<div class="stat"><b>${Number(m.overall_rank||0).toLocaleString()}</b><span>Rank</span></div><div class="stat"><b>£${bank.toFixed(1)}</b><span>${state.plan?.transfers?.length?'Planned bank':'Bank'}</span></div><div class="stat"><b>£${Number(m.team_value||0).toFixed(1)}</b><span>Value</span></div>`}
@@ -97,6 +97,52 @@ function cardFixtures(player){return[0,1,2].map(offset=>{const gw=Number(state.g
 function playerCard(id){const p=state.plan.players.find(x=>x.player_id===id),x=state.projections[id],fixtures=cardFixtures(p),transfer=state.plan.transfers.find(t=>Number(t.in.player_id)===Number(id));return`<button class="player player-card-v12 ${state.selected===id?'selected':''} ${transfer?'changed':''}" style="${clubCardStyle(p.team)}" data-player="${id}">${transfer?'<span class="transfer-badge">NEW</span>':''}${state.plan.captain===id?'<span class="badge">C</span>':state.plan.vice===id?'<span class="badge">V</span>':''}<strong class="player-card-name">${esc(p.name)}</strong><span class="player-card-fixtures">${fixtures.map(f=>`<span class="player-card-fixture ${f.blank?'blank':`fdr-${f.difficulty}`}"${f.blank?'':` title="FDR ${f.difficulty}"`}><b>${esc(f.text)}</b></span>`).join('')}</span><span class="player-card-projection"><b class="primary-3gw">${(state.multiProjections[id]?.xPts3??x.xPts).toFixed(1)} · 3GW</b><small>${x.xPts.toFixed(1)} next · ${Math.round(x.xMin)} min</small></span>${transfer?`<small class="transfer-note">IN for ${esc(transfer.out.name)}</small>`:''}</button>`}
 function render(){renderSummary();renderPlanningStatus();renderPlanSummary();const by=pos=>state.plan.starters.filter(id=>state.plan.players.find(p=>p.player_id===id)?.position===pos);$('#pitch').innerHTML=['GK','DEF','MID','FWD'].map(pos=>`<div class="line">${by(pos).map(playerCard).join('')}</div>`).join('');$('#bench').innerHTML=state.plan.bench.map(playerCard).join('');const base=state.plan.starters.reduce((s,id)=>s+(state.projections[id]?.xPts||0),0),cap=state.projections[state.plan.captain]?.xPts||0;$('#lineupScore').innerHTML=`<span>Projected XI <b>${(base+cap).toFixed(1)}</b></span><span>Formation <b>${by('DEF').length}-${by('MID').length}-${by('FWD').length}</b></span>`;document.querySelectorAll('[data-player]').forEach(b=>b.onclick=()=>pick(Number(b.dataset.player)))}
 function freeHitPlans(){db.managers??={};db.managers[state.managerId]??={plans:{}};db.managers[state.managerId].freeHitPlans??={};return db.managers[state.managerId].freeHitPlans}
+function validPlannerBenchmark(plan){
+ if(!plan||!Array.isArray(plan.players)||plan.players.length!==15||!Array.isArray(plan.starters)||plan.starters.length!==11||!Array.isArray(plan.bench)||plan.bench.length!==4)return false;
+ const ids=plan.players.map(player=>Number(player.player_id)),allLineup=[...plan.starters,...plan.bench].map(Number),positions={GK:0,DEF:0,MID:0,FWD:0};
+ if(new Set(ids).size!==15||new Set(allLineup).size!==15||allLineup.some(id=>!ids.includes(id)))return false;
+ for(const player of plan.players)positions[player.position]=(positions[player.position]||0)+1;
+ return positions.GK===2&&positions.DEF===5&&positions.MID===5&&positions.FWD===3&&validPlannerFormation(plan)&&plan.starters.some(id=>Number(id)===Number(plan.captain))&&plan.starters.some(id=>Number(id)===Number(plan.vice))&&Number(plan.captain)!==Number(plan.vice);
+}
+function validPlannerFormation(plan){
+ const counts={GK:0,DEF:0,MID:0,FWD:0};
+ for(const id of plan.starters){const player=plan.players.find(item=>Number(item.player_id)===Number(id));if(!player)return false;counts[player.position]=(counts[player.position]||0)+1}
+ return counts.GK===1&&counts.DEF>=3&&counts.DEF<=5&&counts.MID>=2&&counts.MID<=5&&counts.FWD>=1&&counts.FWD<=3;
+}
+function currentTeamSignature(plan){
+ return JSON.stringify({players:plan.players.map(player=>Number(player.player_id)).sort((a,b)=>a-b),starters:plan.starters.map(Number).sort((a,b)=>a-b),captain:Number(plan.captain),vice:Number(plan.vice)});
+}
+async function currentTeamCandidate(gw){
+ const planned=db.managers?.[state.managerId]?.plans?.[gw];
+ if(validPlannerBenchmark(planned))return{plan:{...structuredClone(planned),gw},source:'Planner team'};
+ let squad=state.baseSquad;
+ if(!Array.isArray(squad)||squad.length!==15){
+  const response=await endpoints.squad(state.managerId,Math.min(Number(gw),Number(state.manager?.current_gameweek||gw)));
+  squad=response.squad;state.baseSquad=squad;state.baseSquadGameweek=Number(response.gameweek||gw);
+ }
+ if(!Array.isArray(squad)||squad.length!==15)throw new Error(`Could not load a valid official 15-player squad for GW${gw}.`);
+ const official=planFromOfficialSquad(gw,{squad,bank:state.manager?.bank,team_value:state.manager?.team_value},state.manager||{});
+ return{plan:official,source:'Official synced team'};
+}
+function projectGameweek(player,gw){
+ const fixtures=fixtureForGw(player,gw),rows=fixtures.map(match=>project(player,state.details[player.player_id],match,modelContext(player,gw)));
+ const projection=rows[0]||project(player,state.details[player.player_id],null,modelContext(player,gw));
+ projection.xPts=rows.reduce((sum,row)=>sum+Number(row.xPts||0),0);
+ projection.xMin=rows.length?Math.max(...rows.map(row=>Number(row.xMin||0))):0;
+ if(rows.length>1)projection.components=Object.fromEntries(Object.keys(projection.components||{}).map(key=>[key,rows.reduce((sum,row)=>sum+Number(row.components?.[key]||0),0)]));
+ if(!rows.length)projection.components={};
+ return projection;
+}
+async function prepareFreeHitComparison(request=state.freeHitRequest){
+ const candidate=await currentTeamCandidate(state.gw),plan=candidate.plan;
+ plan.players=plan.players.map(normalizeFreeHitPlayer);
+ await Promise.all(plan.players.map(async player=>{if(!state.details[player.player_id])state.details[player.player_id]=await endpoints.player(player.player_id)}));
+ if(request!==state.freeHitRequest)return;
+ const projections=Object.fromEntries(plan.players.map(player=>[player.player_id,projectGameweek(player,state.gw)]));
+ state.currentTeamBenchmark={...candidate,plan,projections,signature:currentTeamSignature(plan)};
+ if(!state.freeHitPlan.baselineSignature){state.freeHitPlan.baselineSignature=state.currentTeamBenchmark.signature;persistFreeHit()}
+ renderFreeHitComparison();
+}
 function freeHitBudget(source){
  const managerValue=Number(source.team_value??state.manager?.team_value),bank=Number(source.bank??state.manager?.bank);
  return managerValue>0&&Number.isFinite(bank)?managerValue+bank:100;
@@ -132,23 +178,18 @@ function validateFreeHit(plan){
 }
 function persistFreeHit(){if(!state.freeHitPlan)return false;freeHitPlans()[state.gw]=state.freeHitPlan;if(!save(db)){state.freeHitSaveError='Could not save this Free Hit draft to local storage. Check browser storage availability.';return false}state.freeHitSaveError='';return true}
 async function openFreeHit(gw=state.gw,reset=false){
- state.gw=Number(gw);if(reset){state.freeHitPlan=null;state.freeHitProjections={};$('#freeHitSummary').innerHTML='';$('#freeHitPitch').innerHTML='';$('#freeHitBench').innerHTML=''}renderGwNav();$('#freeHitTitle').textContent=`Free Hit · GW${state.gw}`;renderFreeHitFixtures();$('#freeHitValidation').innerHTML='<p>Loading official squad and player projections…</p>';
+ const request=++state.freeHitRequest,nextGw=Number(gw),changedGameweek=Number(state.gw)!==nextGw;if(changedGameweek||reset){state.freeHitPlan=null;state.currentTeamBenchmark=null;state.freeHitProjections={};$('#freeHitSummary').innerHTML='';$('#freeHitGainSummary').innerHTML='<div class="free-hit-gain-unavailable">Loading current-team comparison…</div>';$('#currentTeamSource').textContent='';$('#currentTeamCaptainSummary').textContent='';$('#currentTeamPitch').innerHTML='';$('#currentTeamBench').innerHTML='';$('#currentTeamFixtures').innerHTML='';$('#freeHitPitch').innerHTML='';$('#freeHitBench').innerHTML=''}state.gw=nextGw;renderGwNav();$('#freeHitTitle').textContent=`Free Hit · GW${state.gw}`;renderFreeHitFixtures();$('#freeHitValidation').innerHTML='<p>Loading official squad and player projections…</p>';
  try{
   const drafts=freeHitPlans();let plan=!reset?drafts[state.gw]:null;
-  if(!plan){const squad=await endpoints.squad(state.managerId,Math.min(state.gw,Number(state.manager?.current_gameweek||state.gw)));plan=freeHitSquadSource(squad,state.gw);drafts[state.gw]=plan;if(!save(db))throw new Error('Could not save the new Free Hit draft to local storage.');state.freeHitSaveError=''}
+  if(!plan){const squad=await endpoints.squad(state.managerId,Math.min(state.gw,Number(state.manager?.current_gameweek||state.gw)));if(request!==state.freeHitRequest)return;plan=freeHitSquadSource(squad,state.gw);drafts[state.gw]=plan;if(!save(db))throw new Error('Could not save the new Free Hit draft to local storage.');state.freeHitSaveError=''}
   plan.gw=state.gw;plan.players=plan.players.map(normalizeFreeHitPlayer);state.freeHitPlan=plan;
   await Promise.all(plan.players.map(async player=>{if(!state.details[player.player_id])state.details[player.player_id]=await endpoints.player(player.player_id)}));
-  calculateFreeHit();renderFreeHit();
- }catch(error){$('#freeHitValidation').innerHTML=`<div class="alert">Could not load Free Hit squad or player details: ${esc(error.message)}</div>`}
+  if(request!==state.freeHitRequest)return;calculateFreeHit();await prepareFreeHitComparison(request);if(request!==state.freeHitRequest)return;renderFreeHit();
+ }catch(error){if(request===state.freeHitRequest)$('#freeHitValidation').innerHTML=`<div class="alert">Could not load Free Hit squad or player details: ${esc(error.message)}</div>`}
 }
 function calculateFreeHit(){
  state.freeHitProjections={};const plan=state.freeHitPlan;if(!plan)return;
- for(const player of plan.players){
-  const fixtures=fixtureForGw(player,state.gw),projections=fixtures.map(match=>project(player,state.details[player.player_id],match,modelContext(player,state.gw))),projection=projections[0]||project(player,state.details[player.player_id],null,modelContext(player,state.gw));
-  if(fixtures.length){projection.xPts=projections.reduce((sum,item)=>sum+item.xPts,0);projection.components=Object.fromEntries(Object.keys(projection.components||{}).map(key=>[key,projections.reduce((sum,item)=>sum+Number(item.components?.[key]||0),0)]));projection.xMin=Math.max(...projections.map(item=>item.xMin))}
-  else{projection.xPts=0;projection.xMin=0;projection.components={}}
-  state.freeHitProjections[player.player_id]=projection;
- }
+ for(const player of plan.players)state.freeHitProjections[player.player_id]=projectGameweek(player,state.gw);
 }
 function freeHitCard(id){
  const plan=state.freeHitPlan,player=plan.players.find(item=>Number(item.player_id)===Number(id)),projection=state.freeHitProjections[id];if(!player)return'';
@@ -166,6 +207,7 @@ function renderFreeHit(){
  $('#freeHitBench').innerHTML=(plan.bench||[]).map(freeHitCard).join('');
  $('#freeHitLineupScore').innerHTML=`<span>Projected XI <b>${(starterTotal+captainPts).toFixed(1)}</b></span><span>Formation <b>${by('DEF').length}-${by('MID').length}-${by('FWD').length}</b></span>`;
  document.querySelectorAll('#freeHitView [data-player]').forEach(button=>button.onclick=()=>pick(Number(button.dataset.player)));
+ renderFreeHitComparison();
 }
 function renderFreeHitFixtures(){
  const fixtures=state.fixtures.filter(fixture=>Number(fixture.gameweek)===Number(state.gw)),teams=new Set(state.players.map(player=>String(player.team||'')).filter(Boolean)),counts=new Map();
@@ -180,6 +222,70 @@ function renderFreeHitFixtures(){
 function freeHitTargetFixtureLabel(player){
  const fixtures=fixtureForGw({...player,player_id:Number(player.id)},state.gw);
  return fixtures.length?fixtures.map(fixture=>`${fixture.opponent} (${fixture.home?'H':'A'})`).join(' + '):'Blank · 0.0 xPts';
+}
+function comparisonPlayerCard(player,projection,plan){
+ const tag=Number(plan.captain)===Number(player.player_id)?'C':Number(plan.vice)===Number(player.player_id)?'V':'';
+ return`<div class="comparison-player-card player player-card-v12" style="${clubCardStyle(player.team)}"><strong class="player-card-name">${esc(player.name)}${tag?` <small>(${tag})</small>`:''}</strong><span class="player-card-projection"><b>${Number(projection?.xPts||0).toFixed(1)} · 1GW</b><small>${Math.round(Number(projection?.xMin||0))} min</small></span></div>`;
+}
+function squadFixtureExposure(plan){
+ const result={fdr12:0,fdr3:0,fdr45:0,blank:0,double:0};
+ for(const player of plan.players){
+  const fixtures=fixtureForGw(player,state.gw);if(!fixtures.length){result.blank++;continue}if(fixtures.length>1){result.double++;continue}
+  const difficulty=Number(fixtures[0].difficulty||3);if(difficulty<=2)result.fdr12++;else if(difficulty===3)result.fdr3++;else result.fdr45++;
+ }
+ return result;
+}
+function renderExposureTable(current,freeHit,label){
+ const currentValues=squadFixtureExposure(current),freeHitValues=squadFixtureExposure(freeHit),rows=[['FDR 1–2','fdr12'],['FDR 3','fdr3'],['FDR 4–5','fdr45'],['Blank','blank'],['Double','double']];
+ return`<div class="exposure-group"><b>${esc(label)}</b><table><thead><tr><th></th><th>Current</th><th>Free Hit</th></tr></thead><tbody>${rows.map(([name,key])=>`<tr><th>${name}</th><td>${currentValues[key]}</td><td>${freeHitValues[key]}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function clubExposure(plan){
+ const counts=new Map();for(const player of plan.players)counts.set(player.team,(counts.get(player.team)||0)+1);
+ return[...counts].sort((a,b)=>b[1]-a[1]||String(a[0]).localeCompare(String(b[0]))).map(([team,count])=>`${team} ${count}`).join(' · ');
+}
+function renderPlayerDifferences(current,freeHit,currentProjection,freeHitProjection){
+ const currentIds=new Set(current.players.map(player=>Number(player.player_id))),freeHitIds=new Set(freeHit.players.map(player=>Number(player.player_id)));
+ const kept=freeHit.players.filter(player=>currentIds.has(Number(player.player_id))),incoming=freeHit.players.filter(player=>!currentIds.has(Number(player.player_id))),outgoing=current.players.filter(player=>!freeHitIds.has(Number(player.player_id)));
+ const projectValue=(projections,id)=>Number(projections[id]?.xPts||0),pairDeltas=(ins,outs)=>{
+  const byPosition=new Map();for(const player of outs){const key=player.position;byPosition.set(key,[...(byPosition.get(key)||[]),player])}
+  for(const rows of byPosition.values())rows.sort((a,b)=>projectValue(currentProjection,a.player_id)-projectValue(currentProjection,b.player_id));
+  const paired=new Map();for(const player of ins){const rows=byPosition.get(player.position)||[];if(rows.length){const out=rows.shift();paired.set(Number(player.player_id),{out,delta:projectValue(freeHitProjection,player.player_id)-projectValue(currentProjection,out.player_id)})}}
+  return paired;
+ };
+ const deltas=pairDeltas(incoming,outgoing),keptHtml=kept.map(player=>`<div class="change-row"><span>${esc(player.name)}</span><b>Kept · ${projectValue(freeHitProjection,player.player_id).toFixed(1)} xPts</b></div>`).join('')||'<p class="comparison-empty">None</p>',inHtml=incoming.map(player=>{const pair=deltas.get(Number(player.player_id));return`<div class="change-row"><span>${esc(player.name)}${pair?` <small>${pair.delta>=0?'+':''}${pair.delta.toFixed(1)} vs ${esc(pair.out.name)}</small>`:''}</span><b>${projectValue(freeHitProjection,player.player_id).toFixed(1)} xPts</b></div>`}).join('')||'<p class="comparison-empty">None</p>',outHtml=outgoing.map(player=>`<div class="change-row"><span>${esc(player.name)}</span><b>${projectValue(currentProjection,player.player_id).toFixed(1)} xPts</b></div>`).join('')||'<p class="comparison-empty">None</p>';
+ return`<div class="change-group"><h5>Kept</h5>${keptHtml}</div><div class="change-group"><h5>IN FOR FH</h5>${inHtml}</div><div class="change-group"><h5>Current team only</h5>${outHtml}</div>`;
+}
+function renderCurrentTeamFixtures(plan,projections){
+ return plan.players.map(player=>{
+  const matches=fixtureForGw(player,state.gw),fixtureText=matches.length?matches.map(match=>`${match.opponent} (${match.home?'H':'A'}) · FDR ${match.difficulty??'—'}`).join(' · '):'Blank · 0.0 xPts';
+  return`<div class="current-fixture-row"><b>${esc(player.name)}</b><span>${esc(fixtureText)}</span><strong>${Number(projections[player.player_id]?.xPts||0).toFixed(1)} xPts</strong><small>${Math.round(Number(projections[player.player_id]?.xMin||0))} min</small></div>`;
+ }).join('');
+}
+function renderFreeHitComparison(){
+ const benchmark=state.currentTeamBenchmark,freeHit=state.freeHitPlan;if(!benchmark||!freeHit)return;
+ const current=benchmark.plan,currentValid=validPlannerBenchmark(current),freeHitValid=validateFreeHit(freeHit).length===0,currentProjection=benchmark.projections,freeHitProjection=state.freeHitProjections;
+ const currentXi=current.starters.reduce((sum,id)=>sum+Number(currentProjection[id]?.xPts||0),0),currentCaptain=Number(currentProjection[current.captain]?.xPts||0),freeHitXi=freeHit.starters.reduce((sum,id)=>sum+Number(freeHitProjection[id]?.xPts||0),0),freeHitCaptain=Number(freeHitProjection[freeHit.captain]?.xPts||0),gain=freeHitXi+freeHitCaptain-currentXi-currentCaptain;
+ const baselineChanged=Boolean(freeHit.baselineSignature&&freeHit.baselineSignature!==benchmark.signature);
+ $('#freeHitRebaseNotice').hidden=!baselineChanged;
+ $('#freeHitRebaseNotice').innerHTML=baselineChanged?`<span>Current team has changed since this Free Hit draft was created.</span><button id="rebaseFreeHit" type="button" class="secondary">Rebase Free Hit comparison</button>`:'';
+ if(baselineChanged)$('#rebaseFreeHit').onclick=()=>{freeHit.baselineSignature=benchmark.signature;persistFreeHit();renderFreeHitComparison()};
+ const currentCaptainPlayer=current.players.find(player=>Number(player.player_id)===Number(current.captain)),freeHitCaptainPlayer=freeHit.players.find(player=>Number(player.player_id)===Number(freeHit.captain)),value=id=>Number(currentProjection[id]?.xPts||0).toFixed(1),freeHitValue=id=>Number(freeHitProjection[id]?.xPts||0).toFixed(1);
+ $('#currentTeamSource').textContent=benchmark.source;
+ $('#currentTeamCaptainSummary').textContent=`Captain ${currentCaptainPlayer?.name||'—'} (${value(current.captain)} xPts) · Vice ${current.players.find(player=>Number(player.player_id)===Number(current.vice))?.name||'—'}`;
+ const byPosition=position=>current.starters.filter(id=>current.players.find(player=>Number(player.player_id)===Number(id))?.position===position);
+ $('#currentTeamPitch').innerHTML=['GK','DEF','MID','FWD'].map(position=>`<div class="line">${byPosition(position).map(id=>comparisonPlayerCard(current.players.find(player=>Number(player.player_id)===Number(id)),currentProjection[id],current)).join('')}</div>`).join('');
+ $('#currentTeamBench').innerHTML=current.bench.map(id=>comparisonPlayerCard(current.players.find(player=>Number(player.player_id)===Number(id)),currentProjection[id],current)).join('');
+ $('#currentTeamFixtures').innerHTML=renderCurrentTeamFixtures(current,currentProjection);
+ if(!currentValid||!freeHitValid){
+  $('#freeHitGainSummary').innerHTML='<div class="free-hit-gain-unavailable">Expected Free Hit gain is available when both the current team and Free Hit squad, lineup, and captaincy are valid.</div>';
+  if(!currentValid)$('#currentTeamCaptainSummary').textContent='Comparison unavailable: current team rules are invalid.';
+  $('#freeHitPlayerChanges').innerHTML='';$('#freeHitExposure').innerHTML='';$('#freeHitClubExposure').innerHTML='';return;
+ }
+ const currentExposure=squadFixtureExposure(current),freeHitExposure=squadFixtureExposure(freeHit);
+ $('#freeHitGainSummary').innerHTML=`<div class="gain-primary"><span>Expected Free Hit gain</span><b>${gain>=0?'+':''}${gain.toFixed(1)} xPts</b></div><div class="gain-comparison"><div><b>${currentXi.toFixed(1)} xPts</b><span>Current XI</span><small>${(currentXi+currentCaptain).toFixed(1)} captain-adjusted</small></div><div><b>${freeHitXi.toFixed(1)} xPts</b><span>Free Hit XI</span><small>${(freeHitXi+freeHitCaptain).toFixed(1)} captain-adjusted</small></div></div><div class="gain-captains"><span>Current captain <b>${esc(currentCaptainPlayer?.name||'—')} · ${value(current.captain)} xPts</b></span><span>Free Hit captain <b>${esc(freeHitCaptainPlayer?.name||'—')} · ${freeHitValue(freeHit.captain)} xPts</b></span></div><div class="gain-exposure-quick"><span>FDR 4–5 <b>Current ${currentExposure.fdr45}</b></span><span>FDR 1–2 <b>Free Hit ${freeHitExposure.fdr12}</b></span><span>Blanks <b>Current ${currentExposure.blank} · FH ${freeHitExposure.blank}</b></span><span>Doubles <b>Current ${currentExposure.double} · FH ${freeHitExposure.double}</b></span></div>`;
+ $('#freeHitPlayerChanges').innerHTML=renderPlayerDifferences(current,freeHit,currentProjection,freeHitProjection);
+ $('#freeHitExposure').innerHTML=`${renderExposureTable(current,freeHit,'Full squad (15)')}${renderExposureTable({...current,players:current.players.filter(player=>current.starters.some(id=>Number(id)===Number(player.player_id)))},{...freeHit,players:freeHit.players.filter(player=>freeHit.starters.some(id=>Number(id)===Number(player.player_id)))},'Starting XI')}`;
+ $('#freeHitClubExposure').innerHTML=`<div><b>Current</b><span>${esc(clubExposure(current))}</span></div><div><b>Free Hit</b><span>${esc(clubExposure(freeHit))}</span></div>`;
 }
 function executeFreeHitSwitch(a,b){
  const plan=state.freeHitPlan,as=plan.starters.includes(a),bs=plan.starters.includes(b);if(as===bs)return false;

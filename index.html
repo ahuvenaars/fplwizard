@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08131f">
   <title>FPL Planner</title>
-  <link rel="stylesheet" href="styles.css?v=37">
-  <link rel="stylesheet" href="free-hit.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=38">
+  <link rel="stylesheet" href="free-hit.css?v=38">
 </head>
 <body>
   <div id="app">
@@ -50,6 +50,7 @@
           <button id="resetFreeHit" type="button" class="secondary">Reset Free Hit</button>
         </div>
         <p class="free-hit-notice">Temporary one-Gameweek squad. Your normal Planner is unchanged.</p>
+        <section id="freeHitGainSummary" class="free-hit-gain-summary"></section>
         <div id="freeHitSummary" class="free-hit-summary"></div>
         <section class="free-hit-fixtures-section">
           <div class="free-hit-fixtures-heading">
@@ -58,6 +59,25 @@
           </div>
           <div id="freeHitFixtures" class="free-hit-fixtures"></div>
         </section>
+        <details id="currentTeamComparison" class="current-team-comparison">
+          <summary>Current team without Free Hit</summary>
+          <div class="current-team-content">
+            <div class="current-team-source-row"><span id="currentTeamSource" class="current-team-source"></span><span id="currentTeamCaptainSummary"></span></div>
+            <h4>Starting XI</h4>
+            <div id="currentTeamPitch" class="current-team-pitch"></div>
+            <h4>Bench</h4>
+            <div id="currentTeamBench" class="current-team-bench"></div>
+            <h4>Current team fixtures</h4>
+            <div id="currentTeamFixtures" class="current-team-fixtures"></div>
+            <h4>What changes?</h4>
+            <div id="freeHitPlayerChanges" class="free-hit-player-changes"></div>
+            <h4>Fixture exposure</h4>
+            <div id="freeHitExposure" class="free-hit-exposure"></div>
+            <h4>Club exposure</h4>
+            <div id="freeHitClubExposure" class="free-hit-club-exposure"></div>
+          </div>
+        </details>
+        <div id="freeHitRebaseNotice" class="free-hit-rebase-notice" hidden></div>
         <div class="free-hit-actions">
           <button id="optimizeFreeHitXi" type="button" class="secondary">Optimize XI</button>
           <button id="highestFreeHitCaptain" type="button" class="secondary">Highest xPts captain</button>
@@ -161,6 +181,6 @@
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=37"></script>
+  <script type="module" src="src/app.js?v=38"></script>
 </body>
 </html>
