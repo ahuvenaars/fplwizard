@@ -8,6 +8,10 @@ Choose **Sync current team** on the Planner tab to refresh the official manager 
 
 Free Hit drafts are stored separately and are not overwritten by Planner sync. Frozen Calibration predictions are kept separately in IndexedDB and are not rewritten by team sync. The public FPL squad endpoint is authoritative, but transfer or lineup changes made before the deadline may take time to appear there; the sync status reports the Gameweek returned by that endpoint, which may be earlier than the Planner projection Gameweek.
 
+## Planner lineup integrity
+
+Planner lineups keep player objects only in `plan.players`; starters and bench contain player IDs. Switching changes only those ID lists and validates the complete 15-player roster, 11 starters, four bench players, formation, and captaincy before saving. On startup and Gameweek changes, invalid saved Planner lineups are diagnosed and rebuilt from an official or previous valid baseline; compatible planned transfers are reapplied when safe. Free Hit drafts and frozen Calibration snapshots are not modified by this recovery.
+
 ## Local development
 
 Serve this directory over HTTP so the browser can load the JavaScript modules. The client in `src/api.js` selects the production Worker on `fplwizard.pages.dev` and the preview Worker on other hostnames. The Worker entry point and Wrangler configuration are in `worker/src/index.js` and `wrangler.toml`.
