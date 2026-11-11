@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08131f">
   <title>FPL Planner</title>
-  <link rel="stylesheet" href="styles.css?v=36">
-  <link rel="stylesheet" href="free-hit.css?v=36">
+  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="free-hit.css?v=37">
 </head>
 <body>
   <div id="app">
@@ -51,6 +51,13 @@
         </div>
         <p class="free-hit-notice">Temporary one-Gameweek squad. Your normal Planner is unchanged.</p>
         <div id="freeHitSummary" class="free-hit-summary"></div>
+        <section class="free-hit-fixtures-section">
+          <div class="free-hit-fixtures-heading">
+            <h3>Gameweek fixtures</h3>
+            <span id="freeHitFixtureSummary"></span>
+          </div>
+          <div id="freeHitFixtures" class="free-hit-fixtures"></div>
+        </section>
         <div class="free-hit-actions">
           <button id="optimizeFreeHitXi" type="button" class="secondary">Optimize XI</button>
           <button id="highestFreeHitCaptain" type="button" class="secondary">Highest xPts captain</button>
@@ -154,6 +161,6 @@
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=36"></script>
+  <script type="module" src="src/app.js?v=37"></script>
 </body>
 </html>
