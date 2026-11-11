@@ -15,3 +15,9 @@ Serve this directory over HTTP so the browser can load the JavaScript modules. T
 ## Local agent test
 
 Copilot local workspace editing is configured correctly.
+
+## Player decision view
+
+Player and transfer-target popups emphasize 1GW/3GW/5GW xPts, expected minutes and start security, upcoming fixtures, xGI, points and defensive contribution rates, clean-sheet probability, price efficiency, role data, and a conservative multi-signal recent trend. Transfer targets show their projected 3GW and 5GW xPts gain over the player being replaced.
+
+Model 3.1 calculations and frozen Calibration snapshots are unchanged. Advanced model diagnostics are hidden in normal use and can be shown by adding `?debug=1` to the frontend URL, including the develop preview.
