@@ -27,6 +27,7 @@
       </section>
       <section id="planSummary" class="plan-summary"></section>
       <section id="alerts"></section>
+      <div id="switchPrompt" class="switch-prompt" hidden><span>Select a player to switch.</span><button id="cancelSwitch" type="button" class="secondary">Cancel</button></div>
       <section class="card">
         <div class="section-head">
           <div>
@@ -83,6 +84,7 @@
           <button id="highestFreeHitCaptain" type="button" class="secondary">Highest xPts captain</button>
         </div>
         <div id="freeHitValidation" class="free-hit-validation" role="status" aria-live="polite"></div>
+        <div id="freeHitSwitchPrompt" class="switch-prompt" hidden><span>Select a player on the other side of the starting XI/bench split.</span><button id="cancelFreeHitSwitch" type="button" class="secondary">Cancel</button></div>
         <section class="card free-hit-lineup-card">
           <div class="section-head">
             <div>
@@ -181,6 +183,6 @@
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=38"></script>
+  <script type="module" src="src/app.js?v=39"></script>
 </body>
 </html>
