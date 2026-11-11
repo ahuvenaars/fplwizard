@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08131f">
   <title>FPL Planner</title>
-  <link rel="stylesheet" href="styles.css?v=38">
-  <link rel="stylesheet" href="free-hit.css?v=38">
+  <link rel="stylesheet" href="styles.css?v=39">
+  <link rel="stylesheet" href="free-hit.css?v=39">
 </head>
 <body>
   <div id="app">
@@ -48,10 +48,8 @@
             <p class="eyebrow">TEMPORARY ONE-GAMEWEEK TEAM</p>
             <h2 id="freeHitTitle">Free Hit</h2>
           </div>
-          <button id="resetFreeHit" type="button" class="secondary">Reset Free Hit</button>
         </div>
         <p class="free-hit-notice">Temporary one-Gameweek squad. Your normal Planner is unchanged.</p>
-        <section id="freeHitGainSummary" class="free-hit-gain-summary"></section>
         <div id="freeHitSummary" class="free-hit-summary"></div>
         <section class="free-hit-fixtures-section">
           <div class="free-hit-fixtures-heading">
@@ -60,44 +58,16 @@
           </div>
           <div id="freeHitFixtures" class="free-hit-fixtures"></div>
         </section>
-        <details id="currentTeamComparison" class="current-team-comparison">
-          <summary>Current team without Free Hit</summary>
-          <div class="current-team-content">
-            <div class="current-team-source-row"><span id="currentTeamSource" class="current-team-source"></span><span id="currentTeamCaptainSummary"></span></div>
-            <h4>Starting XI</h4>
-            <div id="currentTeamPitch" class="current-team-pitch"></div>
-            <h4>Bench</h4>
-            <div id="currentTeamBench" class="current-team-bench"></div>
-            <h4>Current team fixtures</h4>
-            <div id="currentTeamFixtures" class="current-team-fixtures"></div>
-            <h4>What changes?</h4>
-            <div id="freeHitPlayerChanges" class="free-hit-player-changes"></div>
-            <h4>Fixture exposure</h4>
-            <div id="freeHitExposure" class="free-hit-exposure"></div>
-            <h4>Club exposure</h4>
-            <div id="freeHitClubExposure" class="free-hit-club-exposure"></div>
-          </div>
-        </details>
+        <section id="freeHitGainSummary" class="free-hit-gain-summary"></section>
+        <section id="freeHitTeams" class="free-hit-teams" aria-label="Current team and Free Hit team comparison"></section>
         <div id="freeHitRebaseNotice" class="free-hit-rebase-notice" hidden></div>
         <div class="free-hit-actions">
           <button id="optimizeFreeHitXi" type="button" class="secondary">Optimize XI</button>
           <button id="highestFreeHitCaptain" type="button" class="secondary">Highest xPts captain</button>
+          <button id="resetFreeHit" type="button" class="secondary">Reset Free Hit</button>
         </div>
         <div id="freeHitValidation" class="free-hit-validation" role="status" aria-live="polite"></div>
         <div id="freeHitSwitchPrompt" class="switch-prompt" hidden><span>Select a player on the other side of the starting XI/bench split.</span><button id="cancelFreeHitSwitch" type="button" class="secondary">Cancel</button></div>
-        <section class="card free-hit-lineup-card">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">FREE HIT LINEUP</p>
-              <h3>Starting XI</h3>
-            </div>
-          </div>
-          <div id="freeHitLineupScore" class="score-strip"></div>
-          <div id="freeHitPitch" class="pitch"></div>
-          <p class="bench-label">BENCH</p>
-          <div id="freeHitBench" class="bench"></div>
-          <p class="hint">Tap a player for captain, vice-captain, switch, or Replace in Free Hit.</p>
-        </section>
       </section>
       <section id="performanceView" class="performance-view" hidden>
         <div class="section-head">
@@ -161,7 +131,7 @@
       <div id="modelBreakdown" class="model-breakdown"></div>
       <button id="playerCaptainAction" value="captain">Make captain</button>
       <button id="playerViceAction" value="vice">Make vice-captain</button>
-      <button value="switch" class="switch-action">Switch</button>
+      <button id="playerSwitchAction" value="switch" class="switch-action">Switch</button>
       <button id="playerReplaceAction" value="transfer" class="transfer-action">Plan transfer</button>
       <button value="close" class="secondary">Close</button>
     </form>
@@ -183,6 +153,6 @@
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=39"></script>
+  <script type="module" src="src/app.js?v=40"></script>
 </body>
 </html>
