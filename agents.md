@@ -110,3 +110,31 @@ Use this preview URL when available:
 https://develop.fplwizard.pages.dev
 
 Never treat the production URL as the development preview.
+
+Local permissions
+Within this repository, you may without asking:
+
+inspect repository files;
+edit repository files required by the task;
+create required project files;
+run:
+node --check src/api.js
+node --check src/app.js
+node --check src/models.js
+node --check src/store.js
+node --check worker/src/index.js
+run read-only Git commands:
+git status
+git diff
+git diff --stat
+Never do without explicit user permission:
+
+git commit
+git push
+git merge
+git reset
+git checkout main
+wrangler deploy
+modify files outside this repository
+install new software or packages
+Do not request permission merely to read or edit files inside the trusted fplwizard workspace when the requested task requires those changes.

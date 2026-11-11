@@ -4,9 +4,9 @@ The browser-based planner uses the official FPL manager squad as its starting te
 
 ## Current team sync
 
-Choose **Sync current team** on the Planner tab to refresh the official manager profile and squad, current/next Gameweek data, fixtures, full player universe, and squad player details. The Planner recalculates its 1GW, 3GW, and 5GW xPts and shows the official squad Gameweek and sync time. If the official squad differs from the loaded baseline, the current plan is reset to that squad and dependent future local plans are cleared.
+Choose **Sync current team** on the Planner tab to refresh the official manager profile and squad, current/next Gameweek data, fixtures, full player universe, and squad player details. The Planner validates that the official squad has exactly 15 unique players and a valid lineup, then rebuilds the selected Gameweek plan from that squad and recalculates its 1GW, 3GW, and 5GW xPts. The sync status distinguishes the official squad source Gameweek from the Planner projection Gameweek. Invalid or unsaveable sync results leave the existing Planner unchanged, and dependent future Planner plans are cleared after a successful sync.
 
-Frozen Calibration predictions are kept separately in IndexedDB and are not rewritten by team sync. The public FPL squad endpoint is authoritative, but transfer or lineup changes made before the deadline may take time to appear there; the sync status reports the Gameweek returned by that endpoint.
+Free Hit drafts are stored separately and are not overwritten by Planner sync. Frozen Calibration predictions are kept separately in IndexedDB and are not rewritten by team sync. The public FPL squad endpoint is authoritative, but transfer or lineup changes made before the deadline may take time to appear there; the sync status reports the Gameweek returned by that endpoint, which may be earlier than the Planner projection Gameweek.
 
 ## Local development
 

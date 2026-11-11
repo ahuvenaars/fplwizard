@@ -6,28 +6,40 @@ async function boot(){try{const[g,m,fx,ps]=await Promise.all([endpoints.gameweek
 function renderSummary(){const m=state.manager,bank=state.plan?plannedBank():Number(m.bank||0);$('#summary').innerHTML=`<div class="stat"><b>${Number(m.overall_rank||0).toLocaleString()}</b><span>Rank</span></div><div class="stat"><b>£${bank.toFixed(1)}</b><span>${state.plan?.transfers?.length?'Planned bank':'Bank'}</span></div><div class="stat"><b>£${Number(m.team_value||0).toFixed(1)}</b><span>Value</span></div>`}
 function renderGwNav(){$('#gwNav').innerHTML=state.events.map(e=>`<button data-gw="${e.id}" class="${e.id===state.gw?'active':''}">GW${e.id}</button>`).join('');$('#gwNav').onclick=e=>{const b=e.target.closest('[data-gw]');if(b){const gw=Number(b.dataset.gw);if(state.activeView==='freehit')openFreeHit(gw);else openGw(gw)}}}
 function firstPlanningGw(){return Number(state.events?.[0]?.id||state.gw||1)}
-function currentActualFreeTransfers(){
-  const m=state.manager||{};
+function currentActualFreeTransfers(manager=state.manager){
+  const m=manager||{};
   const candidates=[m.free_transfers,m.transfers_available,m.free_transfers_available,m.bank_free_transfers];
   const found=candidates.find(v=>Number.isFinite(Number(v))&&Number(v)>=0);
   return Math.max(1,Math.min(5,Number(found??1)));
 }
-function rolledFreeTransfers(gw){
-  const first=firstPlanningGw(),plans=db.managers?.[state.managerId]?.plans||{};
-  let ft=currentActualFreeTransfers();
+function rolledFreeTransfers(gw,plans=db.managers?.[state.managerId]?.plans||{},first=firstPlanningGw(),manager=state.manager){
+  let ft=currentActualFreeTransfers(manager);
   if(Number(gw)<=first)return ft;
   for(let week=first;week<Number(gw);week++){
     const plan=plans[week],used=Number(plan?.transfers?.length||0);
-    const start=week===first?currentActualFreeTransfers():ft;
+    const start=week===first?currentActualFreeTransfers(manager):ft;
     ft=Math.min(5,Math.max(1,start-used+1));
   }
   return ft;
 }
 async function openGw(gw){if(Number(state.gw)!==Number(gw))clearSwitchMode();state.gw=gw;renderGwNav();$('#lineupTitle').textContent=`Gameweek ${gw}`;let squadSource;try{squadSource=await endpoints.squad(state.managerId,Math.min(gw,state.manager.current_gameweek))}catch{squadSource=await endpoints.squad(state.managerId,state.manager.current_gameweek)}state.baseSquad=squadSource.squad;state.baseSquadGameweek=Number(squadSource.gameweek||Math.min(gw,state.manager.current_gameweek));const previous=gw>state.events[0]?.id?db.managers?.[state.managerId]?.plans?.[gw-1]:null;const previousBank=previous?Number(previous.endingBank??previous.startingBank??state.manager.bank):Number(state.manager.bank||0);const base=previous?{...structuredClone(previous),gw,startingBank:previousBank,endingBank:previousBank,transfers:[]}:{gw,startingBank:Number(state.manager.bank||0),endingBank:Number(state.manager.bank||0),players:state.baseSquad.map(p=>({...p})),starters:state.baseSquad.filter(p=>p.position_order<=11).map(p=>p.player_id),bench:state.baseSquad.filter(p=>p.position_order>11).map(p=>p.player_id),captain:state.baseSquad.find(p=>p.captain)?.player_id,vice:state.baseSquad.find(p=>p.vice_captain)?.player_id,transfers:[]};state.plan=planFor(db,state.managerId,gw,base);state.plan.startingBank=Number(state.plan.startingBank??state.manager.bank??0);state.plan.transfers??=[];state.plan.freeTransfers=rolledFreeTransfers(gw);state.plan.endingBank=plannedBank();state.plan.hitPoints=transferCost().points;state.plan.nextFreeTransfers=Math.min(5,Math.max(1,Number(state.plan.freeTransfers||0)-state.plan.transfers.length+1));await hydrate();calculate();render()}
-function officialSquadSignature(squad){return squad.map(p=>`${p.player_id}:${p.position_order}:${Number(Boolean(p.captain))}:${Number(Boolean(p.vice_captain))}`).sort().join('|')}
+function officialSquadErrors(squad){
+ if(!Array.isArray(squad))return['Official squad response is missing its player list.'];
+ const ids=squad.map(player=>Number(player?.player_id));
+ const duplicates=ids.filter((id,index)=>ids.indexOf(id)!==index);
+ const errors=[];
+ if(squad.length!==15)errors.push(`Expected exactly 15 official players; received ${squad.length}.`);
+ if(ids.some(id=>!Number.isSafeInteger(id)||id<1))errors.push('Official squad contains a missing or invalid player_id.');
+ if(new Set(ids).size!==ids.length)errors.push(`Official squad contains duplicate player_id values: ${[...new Set(duplicates)].join(', ')}.`);
+ const orders=squad.map(player=>Number(player?.position_order));
+ if(orders.some(order=>!Number.isInteger(order)||order<1||order>15)||new Set(orders).size!==15)errors.push('Official squad position_order must contain each lineup position from 1 through 15 exactly once.');
+ if(squad.filter(player=>player?.captain).length!==1||squad.filter(player=>player?.vice_captain).length!==1)errors.push('Official squad must identify exactly one captain and one vice-captain.');
+ return errors;
+}
 function planFromOfficialSquad(gw,squadSource,manager){
- const squad=squadSource.squad,bank=Number(squadSource.bank??manager.bank??0);
- return{gw,startingBank:bank,endingBank:bank,players:squad.map(p=>({...p})),starters:squad.filter(p=>p.position_order<=11).map(p=>p.player_id),bench:squad.filter(p=>p.position_order>11).map(p=>p.player_id),captain:squad.find(p=>p.captain)?.player_id,vice:squad.find(p=>p.vice_captain)?.player_id,transfers:[]};
+ const errors=officialSquadErrors(squadSource?.squad);if(errors.length)throw new Error(errors[0]);
+ const squad=squadSource.squad.map(player=>({...player})).sort((a,b)=>Number(a.position_order)-Number(b.position_order)),bank=Number(squadSource.bank??manager.bank??0);
+ return{gw,sourceGameweek:Number(squadSource.gameweek||gw),startingBank:bank,endingBank:bank,players:squad,starters:squad.filter(player=>Number(player.position_order)<=11).map(player=>player.player_id),bench:squad.filter(player=>Number(player.position_order)>11).map(player=>player.player_id),captain:squad.find(player=>player.captain)?.player_id,vice:squad.find(player=>player.vice_captain)?.player_id,transfers:[]};
 }
 async function syncCurrentTeam(){
  clearSwitchMode();
@@ -38,32 +50,29 @@ async function syncCurrentTeam(){
   const events=g.events||[],gw=Number(events.find(event=>!event.finished)?.id||g.next_gameweek?.id||manager.current_gameweek);
   if(!Number.isInteger(gw)||gw<1||gw>38)throw new Error('Could not determine the current or next Gameweek.');
   if(!Array.isArray(universe?.players)||universe.teamCount!==20||universe.players.length<400)throw new Error(`The refreshed player universe is incomplete (${universe?.players?.length||0} players across ${universe?.teamCount||0} clubs).`);
-  const squadGw=Math.min(gw,Number(manager.current_gameweek)||gw);
-  const squadSource=await endpoints.squad(state.managerId,squadGw),officialSquad=squadSource.squad;
-  if(!Array.isArray(officialSquad)||officialSquad.length!==15)throw new Error(`Expected 15 players in the official squad; received ${officialSquad?.length||0}.`);
-  const squadChanged=officialSquadSignature(state.baseSquad)!==officialSquadSignature(officialSquad);
-  const playersToHydrate=squadChanged||!state.plan?officialSquad:state.plan.players;
-  const playerIds=[...new Set(playersToHydrate.map(player=>Number(player.player_id)))];
+  const squadGw=Math.min(gw,Number(manager.current_gameweek)||gw),squadSource=await endpoints.squad(state.managerId,squadGw),officialSquad=squadSource?.squad;
+  const squadErrors=officialSquadErrors(officialSquad);if(squadErrors.length)throw new Error(squadErrors[0]);
+  const officialGw=Number(squadSource.gameweek||squadGw);if(!Number.isInteger(officialGw)||officialGw<1||officialGw>38)throw new Error('The official squad response did not identify a valid source Gameweek.');
+  const freshPlan=planFromOfficialSquad(gw,{...squadSource,gameweek:officialGw},manager);
+  const planErrors=plannerIntegrityErrors(freshPlan);if(planErrors.length)throw new Error(`Official squad cannot form a valid Planner lineup: ${planErrors[0]}`);
+  const playerIds=freshPlan.players.map(player=>Number(player.player_id));
   const freshDetails=Object.fromEntries(await Promise.all(playerIds.map(async id=>[id,await endpoints.player(id)])));
-  const refreshedManager={...manager,bank:squadSource.bank??manager.bank};
-  const completedEvents=events.filter(event=>event.finished).slice(-8).reverse(),upcomingEvents=events.filter(event=>!event.finished).slice(0,6);
+  const refreshedManager={...manager,bank:squadSource.bank??manager.bank},completedEvents=events.filter(event=>event.finished).slice(-8).reverse(),upcomingEvents=events.filter(event=>!event.finished).slice(0,6);
+  const syncedDb=structuredClone(db);syncedDb.managers??={};syncedDb.managers[state.managerId]??={};syncedDb.managers[state.managerId].plans??={};
+  const syncedPlans=syncedDb.managers[state.managerId].plans;
+  for(const key of Object.keys(syncedPlans))if(Number(key)>gw)delete syncedPlans[key];
+  freshPlan.freeTransfers=rolledFreeTransfers(gw,syncedPlans,Number(upcomingEvents[0]?.id||gw),refreshedManager);
+  freshPlan.endingBank=freshPlan.startingBank;freshPlan.hitPoints=0;freshPlan.nextFreeTransfers=Math.min(5,Math.max(1,Number(freshPlan.freeTransfers||0)+1));
+  const finalPlanErrors=plannerIntegrityErrors(freshPlan);if(finalPlanErrors.length)throw new Error(`Synced Planner baseline failed integrity validation: ${finalPlanErrors[0]}`);
+  syncedPlans[gw]=freshPlan;
+  if(!save(syncedDb))throw new Error('Could not save the refreshed Planner baseline to local storage; the existing Planner was not changed.');
+  for(const key of Object.keys(db))delete db[key];Object.assign(db,syncedDb);
   state.manager=refreshedManager;state.fixtures=fixtures;state.players=universe.players;state.details={...state.details,...freshDetails};
-  state.completedEvents=completedEvents;state.events=upcomingEvents;state.gw=gw;state.baseSquad=officialSquad;state.baseSquadGameweek=Number(squadSource.gameweek||squadGw);
-  if(squadChanged){
-   db.managers??={};db.managers[state.managerId]??={plans:{}};db.managers[state.managerId].plans??={};
-   invalidateFuturePlans();
-   db.managers[state.managerId].plans[gw]=planFromOfficialSquad(gw,squadSource,refreshedManager);
-  }
-  const base=planFromOfficialSquad(gw,squadSource,refreshedManager);
-  state.plan=squadChanged?db.managers[state.managerId].plans[gw]:planFor(db,state.managerId,gw,base);
-  state.plan.startingBank=Number(state.plan.startingBank??squadSource.bank??state.manager.bank??0);
-  state.plan.transfers??=[];state.plan.freeTransfers=rolledFreeTransfers(gw);
-  state.plan.endingBank=plannedBank();state.plan.hitPoints=transferCost().points;
-  state.plan.nextFreeTransfers=Math.min(5,Math.max(1,Number(state.plan.freeTransfers||0)-state.plan.transfers.length+1));
+  state.completedEvents=completedEvents;state.events=upcomingEvents;state.gw=gw;state.plan=syncedPlans[gw];state.baseSquad=state.plan.players.map(player=>({...player}));state.baseSquadGameweek=officialGw;
   $('#teamName').textContent=refreshedManager.team_name;$('#lineupTitle').textContent=`Gameweek ${gw}`;
-  setupReview();renderGwNav();calculate();persist();render();
+  setupReview();renderGwNav();calculate();render();
   status.className='sync-status sync-success';
-  status.textContent=`Synced official squad for GW${state.baseSquadGameweek} at ${new Date().toLocaleString()}. Refreshed current/next Gameweeks, fixtures, ${state.players.length} players, and their projections (1, 3 and 5 GW).${squadChanged?' The official squad changed; future local plans were cleared.':''}`;
+  status.textContent=`Official squad source: GW${officialGw}. Planner projections: GW${gw}. Synced at ${new Date().toLocaleString()}. Refreshed fixtures, ${state.players.length} players, and 1, 3 and 5 GW projections. The Planner baseline was rebuilt from the official squad; incompatible future Planner plans were cleared.`;
  }catch(error){status.className='sync-status sync-error';status.textContent=`Sync failed: ${error.message}`}
  finally{button.disabled=false;button.textContent='Sync current team'}
 }
