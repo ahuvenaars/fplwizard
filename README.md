@@ -18,6 +18,14 @@ Copilot local workspace editing is configured correctly.
 
 ## Player decision view
 
-Player and transfer-target popups emphasize 1GW/3GW/5GW xPts, expected minutes and start security, upcoming fixtures, xGI, points and defensive contribution rates, clean-sheet probability, price efficiency, role data, and a conservative multi-signal recent trend. Transfer targets show their projected 3GW and 5GW xPts gain over the player being replaced.
+The normal player popup emphasizes 3GW xPts, expected minutes and start security, 1GW/5GW horizons, price efficiency, upcoming fixtures, recent results, and set-piece roles. Transfer-target profiles add xGI/90, points/90, clean-sheet probability, DefCon, trend, and projected gains over the player being replaced.
 
 Model 3.1 calculations and frozen Calibration snapshots are unchanged. Advanced model diagnostics are hidden in normal use and can be shown by adding `?debug=1` to the frontend URL, including the develop preview.
+
+The player popup shows compact identity and ownership badges, three horizontal upcoming-fixture cards, and up to three recent completed results. The conservative multi-signal trend appears as a compact note, not a standalone metric card. The `Advanced model diagnostics` section remains available only with `?debug=1`.
+
+## Free Hit workspace
+
+The **Free Hit** tab keeps a temporary squad draft per Gameweek, separately from Planner plans and Calibration snapshots. It starts from the official squad, uses one-Gameweek projections, and supports same-position replacements, lineup switching, captaincy, and an optimized XI without consuming Free Transfers or changing Planner data. Reset asks for confirmation and rebuilds only that Gameweek's draft from the official squad.
+
+The initial Free Hit budget is estimated from the official squad value plus bank; if those values are unavailable, the UI falls back to £100.0m. Replacement credits the outgoing player's current listed price because the public squad payload does not provide the manager's individual selling price. The draft's squad cost, bank, and FPL roster/formation rules are validated locally.
