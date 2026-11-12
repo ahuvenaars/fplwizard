@@ -644,3 +644,177 @@ function setActiveView(view){
  if(view==='performance')renderPerformance();if(view==='calibration')renderCalibration();
 }
 $('#syncCurrentTeam').addEventListener('click',syncCurrentTeam);document.querySelectorAll('.bottom-nav button').forEach(button=>button.addEventListener('click',()=>setActiveView(button.dataset.view)));$('#freezePredictions').addEventListener('click',e=>{e.preventDefault();freezePredictions()});setActiveView('planner');loadPredictionLog().finally(()=>boot());
+
+function safeTransferNumber(value,fallback=0){
+ if(value===null||value===undefined||value==='')return fallback;
+ const number=Number(value);return Number.isFinite(number)?number:fallback;
+}
+function transferClubKey(player){
+ const team=String(player?.team_code||player?.team||player?.team_name||'').trim().toUpperCase();
+ return team?`team:${team}`:`id:${player?.team_id??'unknown'}`;
+}
+function transferCandidateErrors(out,target,freeHitMode=state.transferWorkspace==='freehit'){
+ const plan=freeHitMode?state.freeHitPlan:state.plan;
+ if(!out||!target||!plan||!Array.isArray(plan.players))return['Choose a player to replace and an incoming player.'];
+ const outId=Number(out.player_id),targetId=Number(target.id??target.player_id),errors=[];
+ if(!Number.isSafeInteger(targetId)||targetId<1)return['Invalid player selection.'];
+ if(target.position!==out.position)return['Replacement must play the same position.'];
+ if(targetId===outId||plan.players.some(player=>Number(player.player_id)!==outId&&Number(player.player_id)===targetId))errors.push('Already in your squad.');
+ const remaining=plan.players.filter(player=>Number(player.player_id)!==outId);
+ if(!plan.players.some(player=>Number(player.player_id)===outId))errors.push('Outgoing player is no longer in the squad.');
+ const resulting=[...remaining,{...target,player_id:targetId,position_order:out.position_order}];
+ const structuralPlan={...plan,players:resulting,starters:(plan.starters||[]).map(id=>Number(id)===outId?targetId:id),bench:(plan.bench||[]).map(id=>Number(id)===outId?targetId:id),captain:Number(plan.captain)===outId?targetId:plan.captain,vice:Number(plan.vice)===outId?targetId:plan.vice};
+ const structureErrors=freeHitMode?validateFreeHit(structuralPlan):plannerIntegrityErrors(structuralPlan);
+ if(structureErrors.length)errors.push(structureErrors[0]);
+ const clubCount=remaining.filter(player=>transferClubKey(player)===transferClubKey(target)).length;
+ if(clubCount>=3)errors.push('Max 3 players from this club.');
+ const targetPrice=safeTransferNumber(target.price,NaN);
+ if(!Number.isFinite(targetPrice)||targetPrice<0)errors.push('Price unavailable.');
+ else{
+  const salePrice=freeHitMode?safeTransferNumber(out.price):Math.max(0,safeTransferNumber($('#sellingPrice')?.value,out.price));
+  const available=freeHitMode
+   ?safeTransferNumber(plan.budget)-plan.players.reduce((sum,player)=>sum+safeTransferNumber(player.price),0)+salePrice
+   :plannedBank()+salePrice;
+  const after=available-targetPrice;
+  if(after<-.001)errors.push(`£${Math.abs(after).toFixed(1)}m over budget.`);
+ }
+ return[...new Set(errors)];
+}
+function transferPlayerInitials(player){
+ const words=String(player?.name||'').trim().split(/\s+/).filter(Boolean);
+ return(words.length>1?`${words[0][0]}${words[words.length-1][0]}`:words[0]?.slice(0,2)||'FPL').toUpperCase();
+}
+function renderTransferMatchup(out,target){
+ const box=$('#transferMatchup');if(!box)return;
+ const side=(label,player,kind)=>`<div class="transfer-side transfer-side-${kind}"><small>${label}</small><b>${esc(player?.name||'Choose incoming player')}</b><span>${player?`${esc(player.team_name||player.team||'Club')} · ${esc(player.position||'')} · £${safeTransferNumber(player.price).toFixed(1)}m`:''}</span></div>`;
+ box.innerHTML=`${side('OUT',out,'out')}<span class="transfer-arrow" aria-hidden="true">→</span>${side('IN',target,'in')}`;
+}
+function rankedTopPerformers(position){
+ const points=player=>{const value=player?.total_points;if(value===null||value===undefined||value===''||!Number.isFinite(Number(value)))return 0;return Number(value)};
+ const price=player=>{const value=Number(player?.price);return Number.isFinite(value)&&value>=0?value:Number.POSITIVE_INFINITY};
+ const id=player=>{const value=Number(player?.id);return Number.isSafeInteger(value)&&value>0?value:Number.POSITIVE_INFINITY};
+ return state.players.filter(player=>player?.position===position).slice().sort((a,b)=>{
+  const pointDifference=points(b)-points(a);if(pointDifference)return pointDifference;
+  const priceDifference=price(a)-price(b);if(Number.isFinite(priceDifference)&&priceDifference)return priceDifference;
+  const idDifference=id(a)-id(b);if(Number.isFinite(idDifference)&&idDifference)return idDifference;
+  return String(a?.name||'').localeCompare(String(b?.name||''))||String(a?.team||'').localeCompare(String(b?.team||''));
+ }).slice(0,15);
+}
+renderTargetPlayers=function(){
+ const out=state.transferOut,team=Number($('#targetTeam').value),freeHitMode=state.transferWorkspace==='freehit',plan=freeHitMode?state.freeHitPlan:state.plan;
+ if(!out||!plan)return;
+ const ids=new Set(plan.players.map(player=>Number(player.player_id))),clubs=new Map();
+ for(const player of plan.players)if(Number(player.player_id)!==Number(out.player_id))clubs.set(transferClubKey(player),(clubs.get(transferClubKey(player))||0)+1);
+ const rows=state.players.filter(player=>Number(player.team_id)===team&&player.position===out.position&&!ids.has(Number(player.id)));
+ const eligibleRows=freeHitMode?rows.filter(player=>{
+  const bank=Number(plan.budget)-plan.players.reduce((sum,item)=>sum+Number(item.price||0),0);
+  return Number(player.price)<=bank+Number(out.price||0)+.001&&(clubs.get(transferClubKey(player))||0)<3;
+ }):rows;
+ eligibleRows.sort((a,b)=>rankTransferCandidate(b)-rankTransferCandidate(a)||safeTransferNumber(a.price,Number.POSITIVE_INFINITY)-safeTransferNumber(b.price,Number.POSITIVE_INFINITY)||Number(a.id)-Number(b.id));
+ const select=$('#targetPlayer'),previous=Number(select.value);
+ select.innerHTML=eligibleRows.length?eligibleRows.map(player=>`<option value="${player.id}">${esc(player.name)} · £${safeTransferNumber(player.price).toFixed(1)}${freeHitMode?` · ${esc(freeHitTargetFixtureLabel(player))}`:''}</option>`).join(''):'<option value="">No eligible players</option>';
+ const fallback=eligibleRows.find(player=>Number(player.id)===previous)||eligibleRows[0];
+ if(fallback)select.value=String(fallback.id);
+ select.dataset.poolCount=String(eligibleRows.length);
+ const panel=$('#topPerformersPanel'),button=$('#topPerformersBtn');
+ const topRows=rankedTopPerformers(out.position);
+ panel.innerHTML=`<div class="top-performers-heading"><div><b>Top 15 performers</b><span>Based on actual FPL points · ${esc(out.position)} · all clubs</span></div><b class="top-performers-count">${topRows.length}/15</b></div><ol class="top-performers-list">${topRows.map((player,index)=>{
+  const reasons=transferCandidateErrors(out,player,freeHitMode),disabled=reasons.length>0;
+  return`<li><button type="button" class="top-performer${disabled?' is-disabled':''}" data-top-performer="${player.id}" ${disabled?'disabled':''} aria-label="${esc(`Rank ${index+1}: ${player.name}, ${player.team_name||player.team}, ${player.position}, £${safeTransferNumber(player.price).toFixed(1)}m, ${safeTransferNumber(player.total_points)} FPL points${disabled?`, unavailable: ${reasons.join(', ')}`:''}`)}"><span class="top-performer-rank">${index+1}</span><span class="top-performer-details"><b>${esc(player.name)}</b><small>${esc(player.team_name||player.team||'Club')} · ${esc(player.position)} · £${safeTransferNumber(player.price).toFixed(1)}m</small></span><span class="top-performer-points"><b>${safeTransferNumber(player.total_points)}</b><small>PTS</small></span>${disabled?`<span class="top-performer-reason">${esc(reasons.join(' · '))}</span>`:'<span class="top-performer-available">Select</span>'}</button></li>`;
+ }).join('')}</ol>`;
+ panel.hidden=!state.transferTop15Only;
+ button.textContent=state.transferTop15Only?'Hide Top 15':'Top 15 performers';
+ button.dataset.active=state.transferTop15Only?'1':'0';
+ button.setAttribute('aria-expanded',String(state.transferTop15Only));
+ renderTransferMatchup(out,state.players.find(player=>Number(player.id)===Number(select.value)));
+ renderTransferConsequence();
+ panel.querySelectorAll('[data-top-performer]:not(:disabled)').forEach(candidateButton=>candidateButton.addEventListener('click',()=>{
+  const candidate=state.players.find(player=>Number(player.id)===Number(candidateButton.dataset.topPerformer));
+  if(!candidate)return;
+  $('#targetTeam').value=String(candidate.team_id);
+  renderTargetPlayers();
+  select.value=String(candidate.id);
+  renderTransferMatchup(out,candidate);
+  renderTransferConsequence();
+ }));
+};
+function renderTargetValidation(){
+ const out=state.transferOut,target=state.players.find(player=>Number(player.id)===Number($('#targetPlayer').value));
+ renderTransferMatchup(out,target);
+ const errors=transferCandidateErrors(out,target);
+ if(errors.length){
+  $('#confirmTransfer').disabled=true;
+  $('#transferConsequence').innerHTML=`<div class="transfer-validation-message" role="status">${errors.map(error=>`<span>${esc(error)}</span>`).join('')}</div>`;
+  return false;
+ }
+ return true;
+}
+const originalRenderTransferConsequence=renderTransferConsequence;
+renderTransferConsequence=async function(){
+ if(!renderTargetValidation())return;
+ await originalRenderTransferConsequence();
+ renderTransferMatchup(state.transferOut,state.players.find(player=>Number(player.id)===Number($('#targetPlayer').value)));
+};
+$('#targetPlayer').onchange=renderTransferConsequence;
+$('#sellingPrice').oninput=renderTransferConsequence;
+$('#topPerformersBtn').onclick=()=>{
+ state.transferTop15Only=!state.transferTop15Only;
+ renderTargetPlayers();
+};
+const originalConfirmTransfer=$('#confirmTransfer').onclick;
+$('#confirmTransfer').onclick=async function(event){
+ const out=state.transferOut,target=state.players.find(player=>Number(player.id)===Number($('#targetPlayer').value));
+ if(!renderTargetValidation())return;
+ if(transferCandidateErrors(out,target).length)return;
+ return originalConfirmTransfer.call(this,event);
+};
+renderGwNav=function(){
+ const nav=$('#gwNav');
+ nav.setAttribute('aria-label','Select Gameweek');
+ nav.innerHTML=state.events.map(event=>`<button type="button" data-gw="${event.id}" class="${Number(event.id)===Number(state.gw)?'active':''}" aria-pressed="${Number(event.id)===Number(state.gw)}">GW${event.id}</button>`).join('');
+ nav.onclick=event=>{
+  const button=event.target.closest('[data-gw]');
+  if(!button)return;
+  const gw=Number(button.dataset.gw);
+  if(state.activeView==='freehit')openFreeHit(gw);else openGw(gw);
+ };
+};
+playerCard=function(id){
+ const player=state.plan.players.find(item=>Number(item.player_id)===Number(id)),projection=state.projections[id]||{xPts:0,xMin:0},fixtures=cardFixtures(player),transfer=state.plan.transfers.find(item=>Number(item.in.player_id)===Number(id));
+ const mainPoints=safeTransferNumber(state.multiProjections[id]?.xPts3,projection.xPts),captain=Number(state.plan.captain)===Number(id),vice=Number(state.plan.vice)===Number(id);
+ const fixture=fixtures[0],primary=String(player.team||'').toUpperCase();
+ return`<button type="button" class="player player-card-v12 ${state.selected===id?'selected':''} ${transfer?'changed':''}" style="${clubCardStyle(player.team)}" data-player="${id}" aria-label="${esc(`${player.name}, ${player.position}, ${mainPoints.toFixed(1)} expected points over three Gameweeks`)}"><span class="player-card-topline"><span class="player-avatar" aria-hidden="true">${esc(transferPlayerInitials(player))}</span><span class="player-card-badges">${captain?'<span class="role-badge captain-badge" title="Captain">C</span>':''}${vice?'<span class="role-badge vice-badge" title="Vice-captain">VC</span>':''}${transfer?'<span class="new-player-badge">IN</span>':''}</span></span><strong class="player-card-name" title="${esc(player.name)}">${esc(player.name)}</strong><span class="player-card-club">${esc(primary)} · £${safeTransferNumber(player.price).toFixed(1)}m</span><span class="player-card-projection"><b class="primary-3gw">${mainPoints.toFixed(1)} <small>3GW</small></b><small>${safeTransferNumber(projection.xPts).toFixed(1)} next · ${Math.round(safeTransferNumber(projection.xMin))}m</small></span><span class="player-card-next-fixture ${fixture?.blank?'blank':`fdr-${fixture?.difficulty||3}`}">${fixture?.blank?'BLANK':esc(fixture?.text||'Fixture pending')}</span>${transfer?`<small class="transfer-note">IN for ${esc(transfer.out.name)}</small>`:''}</button>`;
+};
+render=function(){
+ updateSwitchPrompt();if(!ensurePlannerIntegrity())return;
+ renderSummary();renderPlanningStatus();renderPlanSummary();
+ const by=position=>state.plan.starters.filter(id=>state.plan.players.find(player=>Number(player.player_id)===Number(id))?.position===position);
+ $('#pitch').innerHTML=['FWD','MID','DEF','GK'].map(position=>`<div class="line line-${position}" aria-label="${position}"><span class="pitch-position-label" aria-hidden="true">${position}</span>${by(position).map(playerCard).join('')}</div>`).join('');
+ $('#bench').innerHTML=state.plan.bench.map(playerCard).join('');
+ const base=state.plan.starters.reduce((sum,id)=>sum+safeTransferNumber(state.projections[id]?.xPts),0),captainPoints=safeTransferNumber(state.projections[state.plan.captain]?.xPts);
+ $('#lineupScore').innerHTML=`<span>Projected XI <b>${(base+captainPoints).toFixed(1)}</b></span><span>Formation <b>${by('DEF').length}-${by('MID').length}-${by('FWD').length}</b></span>`;
+ document.querySelectorAll('#pitch [data-player],#bench [data-player]').forEach(button=>button.onclick=()=>pick(Number(button.dataset.player)));
+};
+const originalSetActiveView=setActiveView;
+setActiveView=function(view){
+ originalSetActiveView(view);
+ document.body.dataset.view=view;
+ document.querySelectorAll('.bottom-nav button').forEach(button=>{
+  if(button.dataset.view===view)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+ });
+};
+setActiveView(state.activeView);
+$('#playerSwitchAction').addEventListener('click',event=>{
+ event.preventDefault();
+ const id=Number($('#playerMenu').dataset.id),freeHitMode=state.activeView==='freehit';
+ $('#playerMenu').close('switch');
+ state.readOnlyPlayerMenu=false;
+ beginSwitchMode(id);
+ if(freeHitMode)renderFreeHit();else render();
+});
+$('#playerReplaceAction').addEventListener('click',event=>{
+ event.preventDefault();
+ const id=Number($('#playerMenu').dataset.id);
+ $('#playerMenu').close('close');
+ openTransfer(id);
+});

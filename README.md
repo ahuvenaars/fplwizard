@@ -12,6 +12,12 @@ Free Hit drafts are stored separately and are not overwritten by Planner sync. F
 
 Planner lineups keep player objects only in `plan.players`; starters and bench contain player IDs. Switching changes only those ID lists and validates the complete 15-player roster, 11 starters, four bench players, formation, and captaincy before saving. On startup and Gameweek changes, invalid saved Planner lineups are diagnosed and rebuilt from an official or previous valid baseline; compatible planned transfers are reapplied when safe. Free Hit drafts and frozen Calibration snapshots are not modified by this recovery.
 
+## Transfer targets and Planner presentation
+
+The transfer flow's **Top 15 performers** list ranks the complete current FPL player dataset at the outgoing player's position by actual `total_points`, with price and player ID as deterministic tie-breakers. It shows the genuine top 15 before applying transfer checks; candidates that fail budget, club-limit, squad, or roster validation remain visible but disabled with a reason. The normal player search and existing transfer confirmation flow remain available.
+
+The Planner lineup now uses a football-pitch layout with a distinct Starting XI and bench, clearer captain/vice-captain badges, and more scannable player cards. Player photos are not included in the current canonical Worker player payload, so cards use team-coloured initials rather than external image URLs.
+
 ## Local development
 
 Serve this directory over HTTP so the browser can load the JavaScript modules. The client in `src/api.js` selects the production Worker on `fplwizard.pages.dev` and the preview Worker on other hostnames. The Worker entry point and Wrangler configuration are in `worker/src/index.js` and `wrangler.toml`.

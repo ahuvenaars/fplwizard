@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#08131f">
+  <meta name="theme-color" content="#F2F5F6">
   <title>FPL Planner</title>
-  <link rel="stylesheet" href="styles.css?v=39">
-  <link rel="stylesheet" href="free-hit.css?v=39">
+  <link rel="stylesheet" href="styles.css?v=40">
+  <link rel="stylesheet" href="free-hit.css?v=40">
 </head>
 <body>
   <div id="app">
@@ -37,10 +37,11 @@
           <button id="bestXi" class="secondary">Best XI</button>
         </div>
         <div id="lineupScore" class="score-strip"></div>
-        <div id="pitch" class="pitch"></div>
-        <p class="bench-label">BENCH</p>
+        <div class="lineup-zone-heading"><div><p class="eyebrow">STARTING XI</p><span>Projected formation</span></div><span class="lineup-formation-hint">Tap a player for actions</span></div>
+        <div id="pitch" class="pitch" aria-label="Starting XI football pitch"></div>
+        <div class="bench-zone-heading"><div><p class="eyebrow">BENCH</p><span>Four substitutes</span></div><small>Tap two players to swap</small></div>
         <div id="bench" class="bench"></div>
-        <p class="hint">Tap a player twice for actions. Tap two players to swap starter and bench.</p>
+        <p class="hint lineup-hint">Select a player to view details, captaincy and transfer actions. Choose Switch to exchange two lineup positions.</p>
       </section>
       <section id="freeHitView" class="free-hit-view" hidden>
         <div class="section-head">
@@ -117,11 +118,11 @@
       </section>
     </main>
     <nav class="bottom-nav">
-      <button data-view="planner" class="active">Planner</button>
-      <button data-view="freehit">Free Hit</button>
-      <button data-view="review">Review</button>
-      <button data-view="performance">Performance</button>
-      <button data-view="calibration">Calibration</button>
+      <button data-view="planner" class="active" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 12h16M12 5v14"/></svg><span>Planner</span></button>
+      <button data-view="freehit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8zM12 3v18M3 8l9 5 9-5"/></svg><span>Free Hit</span></button>
+      <button data-view="review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg><span>Review</span></button>
+      <button data-view="performance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg><span>Performance</span></button>
+      <button data-view="calibration"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 15l4-5 3 3 5-7M6 5h.01M12 5h.01M18 5h.01"/></svg><span>Calibration</span></button>
     </nav>
   </div>
   <dialog id="playerMenu">
@@ -146,14 +147,16 @@
         <button type="button" id="closeTransfer" class="secondary">Close</button>
       </div>
       <div id="budgetBefore" class="budget-box"></div>
+      <div id="transferMatchup" class="transfer-matchup" aria-live="polite"></div>
       <label>Selling price<input id="sellingPrice" type="number" inputmode="decimal" min="0" max="20" step="0.1"></label>
       <label>Team<select id="targetTeam"></select></label>
-      <div class="target-picker-actions"><button type="button" id="topPerformersBtn" class="secondary">Top 15 performers</button></div>
+      <div class="target-picker-actions"><button type="button" id="topPerformersBtn" class="secondary" aria-expanded="false" aria-controls="topPerformersPanel">Top 15 performers</button></div>
+      <section id="topPerformersPanel" class="top-performers-panel" hidden aria-label="Top 15 performers by actual FPL points"></section>
       <label>Player<select id="targetPlayer"></select></label>
       <div id="transferConsequence"></div>
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=42"></script>
+  <script type="module" src="src/app.js?v=43"></script>
 </body>
 </html>

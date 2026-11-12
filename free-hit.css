@@ -148,3 +148,59 @@
  .free-hit-fixture-team>b{font-size:10px}
  .free-hit-fixture-team>small{font-size:7px}
 }
+
+/* MVP40 shared design tokens for the isolated Free Hit workspace */
+.free-hit-view{max-width:1160px;margin:0 auto}
+.free-hit-view h2,.free-hit-view h3{color:var(--navy)}
+.free-hit-notice{border-left-color:var(--accent);border-radius:var(--radius-sm);background:#EAF4EF;color:#315D4A}
+.free-hit-summary>div,.free-hit-fixture,.free-hit-gain-summary,.free-hit-teams,.comparison-player-card,.performance-stat{border-color:var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.free-hit-summary b,.gain-primary>b,.gain-team .gain-projected{color:var(--accent)}
+.free-hit-fixture{padding:10px}
+.free-hit-fixture-team{border-left-color:var(--club-primary);background:#F3F6F7}
+.free-hit-gain-summary{background:#fff}
+.gain-team{background:#F2F5F6}
+.gain-team>small{color:var(--muted)}
+.gain-primary>b{font-size:19px}
+.free-hit-teams{padding:14px;border-radius:var(--radius-lg)}
+.comparison-team-head{padding:10px 0 12px}
+.comparison-team-head b{font-size:11px;color:var(--navy)}
+.comparison-team-head small{font-size:9px}
+.free-hit-teams>h3{font-size:11px;color:var(--muted)}
+.comparison-position{font-size:9px;color:var(--muted)}
+.comparison-row{gap:10px;margin-bottom:8px}
+.comparison-player-card{min-height:84px;gap:5px;padding:9px;border-left-width:4px;border-radius:var(--radius-sm);background:#F8FAFB;color:var(--text);transition:transform var(--transition),box-shadow var(--transition)}
+.comparison-player-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.comparison-player-card>strong{font-size:11px}
+.comparison-player-card>strong i{color:var(--accent);font-size:9px}
+.comparison-player-meta{font-size:9px;color:var(--muted)}
+.comparison-fixture{padding:3px 5px;border-radius:5px;font-size:8px}
+.comparison-player-card.free-hit-only{border-left-color:#4C9A70;background:#F3FAF5}
+.comparison-player-card.current-only{border-left-color:#C9856C;background:#FFF8F5}
+.kept-tag{background:#EAF0F2;color:#566578;font-size:8px}
+.comparison-player-empty{min-height:78px;border-color:#DCE4E8;border-radius:var(--radius-sm);background:#F7F9FA}
+.free-hit-actions button{min-height:42px;padding:10px 12px;font-size:11px}
+.free-hit-validation{color:var(--positive)}
+.free-hit-valid{border-radius:var(--radius-sm);background:#EAF4EF;color:#315D4A}
+.free-hit-rebase-notice{border-color:#E4CDA8;border-radius:var(--radius-sm);background:#FBF5EA;color:#81581E}
+.free-hit-gain-unavailable{color:var(--warning)}
+.gain-primary>span,.gain-team>span,.gain-team>small{font-size:9px}
+@media(max-width:760px){
+ .free-hit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .free-hit-actions{flex-wrap:wrap}
+ .free-hit-actions button{flex:1 1 30%;min-height:44px;font-size:10px}
+ .comparison-row{gap:6px}
+ .comparison-player-card{min-height:78px;padding:7px}
+ .comparison-player-card>strong{font-size:10px}
+ .comparison-player-meta{font-size:8px}
+}
+@media(max-width:420px){
+ .free-hit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .free-hit-fixtures{grid-template-columns:minmax(0,1fr)}
+ .gain-headline{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr)}
+ .gain-team .gain-projected{font-size:18px}
+ .comparison-team-head,.comparison-row{gap:4px}
+ .comparison-player-card{padding:6px 4px}
+ .comparison-player-card>strong{font-size:9px}
+ .comparison-player-meta{font-size:7px}
+ .comparison-fixture{font-size:7px}
+}
