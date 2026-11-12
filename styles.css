@@ -221,3 +221,44 @@ dialog form{min-width:0}
 @media(prefers-reduced-motion:reduce){
  *,*:before,*:after{scroll-behavior:auto!important;transition:none!important}
 }
+
+/* Compact, responsive lineup cards */
+.pitch{min-height:0;gap:8px;padding:13px 10px;overflow-x:auto;overscroll-behavior-x:contain;justify-content:space-evenly}
+.line{display:grid;grid-template-columns:repeat(var(--line-count),minmax(70px,1fr));align-items:center;justify-items:center;gap:6px;width:max(100%,var(--line-min-width));min-height:0}
+.player-card-v12{position:relative;display:flex;flex:0 1 150px;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-width:0;max-width:150px;min-height:0;padding:6px 7px;border:1px solid #D7E1E6;border-radius:11px;background:#fff;color:var(--text);box-shadow:0 2px 6px #0D2A1D18;text-align:left;white-space:normal;overflow:hidden}
+.player-card-v12:hover:not(:disabled){transform:translateY(-1px);background:#fff;box-shadow:0 4px 10px #0D2A1D24}
+.player-card-heading{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;min-width:0}
+.player-card-v12 .player-card-name{display:-webkit-box;width:auto;min-width:0;min-height:2.2em;margin:0!important;overflow:hidden;color:var(--navy);font-size:10px!important;font-weight:800;line-height:1.1;text-align:center;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.player-card-heading .badge{position:static;display:inline-grid;flex:none;place-items:center;width:auto;min-width:18px;height:18px;padding:0 4px;border-radius:6px;background:var(--navy);color:#fff;font-size:8px;font-weight:900;line-height:1}
+.player-card-heading .vice-badge{background:#556275}
+.player-card-fixtures{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:none;gap:2px;width:100%;height:auto;min-width:0;border:0;border-radius:0;overflow:visible;background:transparent;box-shadow:none}
+.player-card-fixture{display:block;min-width:0;min-height:0;padding:3px 1px!important;border:0;border-radius:4px;background:#F4F0ED;color:#514B48;text-align:center}
+.player-card-fixture:last-child{border-bottom:0}
+.player-card-fixture>b{display:block;overflow:hidden;font-size:7px;font-weight:850;line-height:1.1;text-overflow:ellipsis;white-space:nowrap}
+.player-card-fixture.blank{border-left-color:#A8A8A8;background:#F1F1F1;color:#696969}
+.player-card-fixture.fdr-1{border-left:2px solid #258A4B;background:#DDF3E5;color:#176A3A}
+.player-card-fixture.fdr-2{border-left:2px solid #78A94B;background:#ECF6E8;color:#496D2C}
+.player-card-fixture.fdr-3{border-left:2px solid #A79D96;background:#F4F0ED;color:#514B48}
+.player-card-fixture.fdr-4{border-left:2px solid #C45A5A;background:#FBE8E7;color:#9B3939}
+.player-card-fixture.fdr-5{border-left:2px solid #A51F38;background:#F4D9DD;color:#8C253B}
+.player-card-projection{display:flex;align-items:center;justify-content:space-between;gap:3px;width:100%;min-width:0;white-space:nowrap}
+.player-card-projection .primary-3gw{overflow:hidden;color:var(--accent);font-size:9px!important;font-weight:900;text-overflow:ellipsis}
+.player-card-projection .player-card-minutes{flex:none;color:var(--muted);font-size:8px!important;font-weight:750}
+.player-card-v12.changed{border-color:var(--accent);box-shadow:inset 0 -3px var(--accent),0 2px 6px #0D2A1D18}
+.player-card-v12.minutes-warning{border:2px solid #D49A19;box-shadow:0 0 0 1px #D49A1955}
+.player-card-v12.minutes-warning.changed{box-shadow:inset 0 -3px var(--accent),0 0 0 1px #D49A1955}
+.player.selected{outline:3px solid #56A88B;outline-offset:2px}
+.player-card-v12:focus-visible{outline:3px solid #147D5B;outline-offset:2px}
+.bench{gap:7px;padding:8px}
+.bench .player-card-v12{min-height:0;border-color:#D7E1E6;background:#fff;box-shadow:0 2px 6px #0D2A1D18}
+.bench .player-card-v12.minutes-warning{border:2px solid #D49A19}
+@media(max-width:520px){
+ .pitch{padding-right:7px;padding-left:7px}
+ .line{grid-template-columns:repeat(var(--line-count),minmax(70px,1fr));gap:4px}
+ .player-card-v12{padding:5px 4px}
+ .player-card-v12 .player-card-name{font-size:9px!important}
+ .player-card-fixture>b{font-size:6.5px}
+ .player-card-projection .primary-3gw{font-size:8px!important}
+ .player-card-projection .player-card-minutes{font-size:7px!important}
+ .bench{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
