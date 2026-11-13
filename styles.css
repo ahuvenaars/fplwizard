@@ -269,3 +269,33 @@ dialog form{min-width:0}
 @media(max-width:420px){
  .line{--player-card-width:clamp(48px,calc((100vw - 96px)/5),84px)}
 }
+
+/* Header manager stats and compact, centered bench cards */
+header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-identity{flex:0 1 auto;min-width:0}
+.header-identity h1{overflow-wrap:anywhere}
+.header-summary{display:flex;flex:1 1 auto;align-items:center;justify-content:flex-end;gap:clamp(8px,1.5vw,20px);width:auto;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.header-summary .stat{flex:0 1 auto;min-width:0;padding:0;border:0;background:transparent;box-shadow:none;white-space:nowrap}
+.header-summary .stat>b{display:flex;align-items:center;gap:5px;font-size:clamp(14px,1.7vw,19px);letter-spacing:normal;color:var(--navy)}
+.header-summary .stat>span{font-size:10px;line-height:1.2}
+.rank-trend{display:inline-grid;place-items:center;font-size:1.1em;line-height:1}
+.rank-trend.improved{color:#00865A}
+.rank-trend.declined{color:#C43D46}
+.pitch{background:linear-gradient(145deg,#174A35 0%,#236447 52%,#3B815F 100%)}
+.player-card-v12 .player-card-name{font-size:clamp(6px,calc(var(--player-card-width)*.15 - 1px),8px)!important}
+.bench{--bench-card-width:var(--player-card-width);display:flex;align-items:flex-start;justify-content:center;gap:8px}
+.bench .player-card-wrap{flex:0 0 var(--bench-card-width);width:var(--bench-card-width)}
+.bench .player-card-wrap .player-card-v12{flex:0 0 var(--bench-card-width);width:var(--bench-card-width);min-width:var(--bench-card-width);max-width:var(--bench-card-width)}
+@media(min-width:421px) and (max-width:760px){
+ .bench{--bench-card-width:clamp(48px,calc((100vw - 116px)/5),84px)}
+}
+@media(max-width:420px){
+ header{gap:8px}
+ .header-identity{flex:0 1 38%;min-width:100px}
+ .header-identity h1{font-size:16px}
+ .header-summary{flex:1 1 170px;gap:4px}
+ .header-summary .stat{flex:1 1 0}
+ .header-summary .stat>b{font-size:clamp(11px,3.6vw,14px)}
+ .header-summary .stat>span{font-size:9px}
+ .bench{--bench-card-width:clamp(48px,calc((100vw - 96px)/5),84px)}
+}
