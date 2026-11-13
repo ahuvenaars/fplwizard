@@ -224,14 +224,14 @@ dialog form{min-width:0}
 
 /* Compact, responsive lineup cards */
 .pitch{min-height:0;gap:8px;padding:13px 10px;overflow-x:auto;overscroll-behavior-x:contain;justify-content:space-evenly}
-.line{display:grid;grid-template-columns:repeat(var(--line-count),var(--player-card-width));justify-content:center;align-items:center;gap:clamp(4px,1vw,10px);width:max-content;min-width:100%;min-height:0}
+.line{display:grid;grid-template-columns:repeat(var(--line-count),var(--player-card-width));justify-content:center;align-items:center;gap:16px;width:max-content;min-width:100%;min-height:0;padding:8px 8px 0}
+.player-card-wrap{position:relative;display:block;width:var(--player-card-width);height:94px;overflow:visible}
 .player-card-v12{position:relative;display:flex;flex:0 0 var(--player-card-width);flex-direction:column;align-items:stretch;gap:0;width:var(--player-card-width);min-width:var(--player-card-width);max-width:var(--player-card-width);height:94px;min-height:94px;max-height:94px;padding:0;border:1px solid #D7E1E6;border-radius:8px;background:#fff;color:var(--text);box-shadow:none;text-align:left;white-space:normal;overflow:hidden}
 .player-card-v12:hover:not(:disabled){transform:none;background:#fff;box-shadow:none}
-.player-card-heading{position:relative;display:flex;align-items:center;justify-content:center;gap:0;width:100%;height:20px;min-height:20px;overflow:hidden;background:#062B60}
-.player-card-v12 .player-card-name{display:block!important;width:100%;min-width:0;min-height:0;margin:0!important;padding:0 2px;overflow:hidden;color:#fff;font-size:10px!important;font-weight:800;line-height:20px;text-align:center;text-overflow:ellipsis;white-space:nowrap}
-.player-card-heading.has-role .player-card-name{padding-right:21px}
-.player-card-heading .badge{position:absolute;top:1px;right:2px;display:inline-grid;flex:none;place-items:center;width:auto;min-width:17px;height:17px;padding:0 3px;border-radius:5px;background:#fff;color:#062B60;font-size:8px;font-weight:900;line-height:1}
-.player-card-heading .vice-badge{background:#556275}
+.player-card-heading{position:relative;display:flex;align-items:center;justify-content:center;gap:0;width:100%;height:20px;min-height:20px;overflow:hidden;background:var(--club-name-background,#062B60)}
+.player-card-v12 .player-card-name{display:block!important;width:100%;min-width:0;min-height:0;margin:0!important;padding:0 3px;overflow:hidden;border-radius:2px;background:var(--club-name-label,transparent);color:var(--club-name-color,#fff);font-size:10px!important;font-weight:800;line-height:20px;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.player-card-wrap>.player-role-badge{position:absolute;top:-6px;right:-6px;z-index:5;display:grid;place-items:center;width:16px;height:16px;min-width:16px;padding:0;border:1px solid #fff;border-radius:50%;background:#062B60;color:#fff;font-size:9px;font-weight:900;line-height:1;pointer-events:none}
+.player-card-wrap>.player-role-badge.vice-badge{border-color:#062B60;background:#fff;color:#062B60}
 .player-card-fixtures{position:static;display:grid;grid-template-rows:repeat(3,13px);flex:none;flex-direction:column;gap:2px;width:auto;height:43px;min-width:0;margin:4px 4px 2px;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none}
 .player-card-fixture{display:flex;align-items:center;justify-content:center;width:100%;height:13px;min-width:0;min-height:13px;padding:0 2px!important;border:0;border-radius:3px;background:#F4F0ED;color:#514B48;text-align:center}
 .player-card-fixture:last-child{border-bottom:0}
@@ -255,7 +255,7 @@ dialog form{min-width:0}
 .bench .player-card-v12.minutes-warning{border:2px solid #D49A19}
 @media(max-width:520px){
  .pitch{padding-right:7px;padding-left:7px}
- .line{gap:4px}
+ .line{gap:16px}
  .player-card-v12{padding:0}
  .player-card-v12 .player-card-name{font-size:10px!important}
  .player-card-fixture>b{font-size:9px}

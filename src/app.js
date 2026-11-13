@@ -206,8 +206,40 @@ function persistPlannerState({invalidateFuture=false}={}){
  for(const key of Object.keys(db))delete db[key];Object.assign(db,nextDb);
  return true;
 }
-const CLUB_COLORS={ARS:['#EF0107','#FFFFFF'],AVL:['#670E36','#95BFE5'],BOU:['#DA291C','#111111'],BRE:['#E30613','#FFFFFF'],BHA:['#0057B8','#FFFFFF'],BUR:['#6C1D45','#99D6EA'],CHE:['#034694','#FFFFFF'],CRY:['#1B458F','#C4122E'],EVE:['#003399','#FFFFFF'],FUL:['#111111','#FFFFFF'],LEE:['#FFCD00','#1D428A'],LIV:['#C8102E','#FFFFFF'],MCI:['#6CABDD','#FFFFFF'],MUN:['#DA291C','#111111'],NEW:['#111111','#FFFFFF'],NFO:['#DD0000','#FFFFFF'],SUN:['#EB172B','#FFFFFF'],TOT:['#132257','#FFFFFF'],WHU:['#7A263A','#1BB1E7'],WOL:['#FDB913','#231F20']};
-function clubCardStyle(team){const [a,b]=CLUB_COLORS[String(team||'').toUpperCase()]||['#781D32','#151515'];return `--club-primary:${a};--club-secondary:${b}`}
+const CLUB_CARD_STYLE_SEASON='2026-27';
+const CLUB_CARD_STYLES_BY_SEASON={
+ '2026-27':{
+  1:{primary:'#D71920',secondary:'#FFFFFF',background:'linear-gradient(90deg,#FFFFFF 0 5px,#D71920 5px calc(100% - 5px),#FFFFFF calc(100% - 5px))',color:'#FFFFFF',label:'rgba(6,43,96,.72)'},
+  2:{primary:'#670E36',secondary:'#95BFE5',background:'linear-gradient(90deg,#95BFE5 0 7px,#670E36 7px calc(100% - 7px),#95BFE5 calc(100% - 7px))',color:'#FFFFFF',label:'rgba(6,43,96,.68)'},
+  3:{primary:'#DA291C',secondary:'#171717',background:'repeating-linear-gradient(90deg,#DA291C 0 8px,#171717 8px 16px)',color:'#FFFFFF',label:'rgba(0,0,0,.68)'},
+  4:{primary:'#D71920',secondary:'#FFFFFF',background:'repeating-linear-gradient(90deg,#D71920 0 8px,#FFFFFF 8px 16px)',color:'#FFFFFF',label:'rgba(6,43,96,.72)'},
+  5:{primary:'#0057B8',secondary:'#FFFFFF',background:'repeating-linear-gradient(90deg,#0057B8 0 7px,#FFFFFF 7px 8px)',color:'#FFFFFF',label:'rgba(6,43,96,.72)'},
+  6:{primary:'#034694',secondary:'#FFFFFF',background:'linear-gradient(135deg,#034694,#0758B8)',color:'#FFFFFF',label:'transparent'},
+  7:{primary:'#79BCE8',secondary:'#17365D',background:'repeating-linear-gradient(90deg,#79BCE8 0 7px,#65A9D6 7px 14px,#17365D 14px 15px)',color:'#17365D',label:'rgba(255,255,255,.82)'},
+  8:{primary:'#1B458F',secondary:'#C41230',background:'linear-gradient(90deg,#1B458F 0 50%,#C41230 50% 100%)',color:'#FFFFFF',label:'rgba(6,43,96,.48)'},
+  9:{primary:'#003399',secondary:'#FFFFFF',background:'linear-gradient(180deg,#003399 0 calc(100% - 1px),#FFFFFF calc(100% - 1px))',color:'#FFFFFF',label:'transparent'},
+  10:{primary:'#171717',secondary:'#FFFFFF',background:'linear-gradient(90deg,#171717 0 4px,#FFFFFF 4px calc(100% - 4px),#171717 calc(100% - 4px))',color:'#171717',label:'rgba(255,255,255,.82)'},
+  11:{primary:'#F5A623',secondary:'#171717',background:'repeating-linear-gradient(90deg,#F5A623 0 8px,#171717 8px 16px)',color:'#FFFFFF',label:'rgba(0,0,0,.68)'},
+  12:{primary:'#0057B8',secondary:'#FFFFFF',background:'linear-gradient(90deg,#FFFFFF 0 4px,#0057B8 4px calc(100% - 4px),#FFFFFF calc(100% - 4px))',color:'#FFFFFF',label:'rgba(6,43,96,.68)'},
+  13:{primary:'#1D428A',secondary:'#FFCD00',background:'linear-gradient(180deg,#FFFFFF 0 calc(100% - 3px),#1D428A calc(100% - 3px) calc(100% - 1px),#FFCD00 calc(100% - 1px))',color:'#1D428A',label:'rgba(255,255,255,.76)'},
+  14:{primary:'#C8102E',secondary:'#FFFFFF',background:'linear-gradient(135deg,#C8102E,#B20D28)',color:'#FFFFFF',label:'transparent'},
+  15:{primary:'#6CABDD',secondary:'#FFFFFF',background:'linear-gradient(180deg,#6CABDD 0 calc(100% - 1px),#FFFFFF calc(100% - 1px))',color:'#132257',label:'transparent'},
+  16:{primary:'#DA291C',secondary:'#171717',background:'linear-gradient(90deg,#171717 0 4px,#DA291C 4px calc(100% - 4px),#171717 calc(100% - 4px))',color:'#FFFFFF',label:'rgba(0,0,0,.38)'},
+  17:{primary:'#171717',secondary:'#FFFFFF',background:'repeating-linear-gradient(90deg,#171717 0 8px,#FFFFFF 8px 16px)',color:'#FFFFFF',label:'rgba(0,0,0,.68)'},
+  18:{primary:'#DD0000',secondary:'#FFFFFF',background:'linear-gradient(180deg,#DD0000 0 calc(100% - 1px),#FFFFFF calc(100% - 1px))',color:'#FFFFFF',label:'transparent'},
+  19:{primary:'#132257',secondary:'#FFFFFF',background:'linear-gradient(180deg,#FFFFFF 0 calc(100% - 2px),#132257 calc(100% - 2px))',color:'#132257',label:'rgba(255,255,255,.74)'},
+  20:{primary:'#EB172B',secondary:'#FFFFFF',background:'repeating-linear-gradient(90deg,#EB172B 0 8px,#FFFFFF 8px 16px)',color:'#FFFFFF',label:'rgba(6,43,96,.68)'}
+ }
+};
+const DEFAULT_CLUB_CARD_STYLE={primary:'#781D32',secondary:'#151515',background:'#062B60',color:'#FFFFFF',label:'transparent'};
+function clubCardStyle(teamOrPlayer){
+ const player=teamOrPlayer&&typeof teamOrPlayer==='object'?teamOrPlayer:null,team=String(player?.team??teamOrPlayer??'').toUpperCase(),teamId=Number(player?.team_id)||Number(state.players.find(item=>String(item.team||'').toUpperCase()===team)?.team_id),style=CLUB_CARD_STYLES_BY_SEASON[CLUB_CARD_STYLE_SEASON]?.[teamId]||DEFAULT_CLUB_CARD_STYLE;
+ return `--club-primary:${style.primary};--club-secondary:${style.secondary}`
+}
+function playerCardClubStyle(player){
+ const teamId=Number(player?.team_id)||Number(state.players.find(item=>String(item.team||'').toUpperCase()===String(player?.team||'').toUpperCase())?.team_id),style=CLUB_CARD_STYLES_BY_SEASON[CLUB_CARD_STYLE_SEASON]?.[teamId]||DEFAULT_CLUB_CARD_STYLE;
+ return `--club-name-background:${style.background};--club-name-color:${style.color};--club-name-label:${style.label}`
+}
 function cardFixtures(player){return[0,1,2].map(offset=>{const gw=Number(state.gw)+offset,matches=state.fixtures.filter(f=>Number(f.gameweek)===gw&&(f.home===player.team||f.away===player.team));return{gw,text:matches.length?matches.map(f=>`${f.home===player.team?f.away:f.home} ${f.home===player.team?'H':'A'}`).join(' + '):'—',blank:!matches.length,difficulty:matches.length?Math.round(matches.reduce((n,f)=>n+Number(f.home===player.team?f.home_difficulty:f.away_difficulty),0)/matches.length):null}})}
 function finiteMetric(value){if(typeof value!=='number'&&typeof value!=='string'||typeof value==='string'&&!value.trim())return null;const number=Number(value);return Number.isFinite(number)?number:null}
 function expectedMinutes(projection){const value=finiteMetric(projection?.xMin);return value!==null&&value>=0?value:null}
@@ -217,7 +249,7 @@ function lineupXptsTotals(starters,projections,captain,horizon='xPts'){
 }
 function playerCard(id){
  const player=state.plan.players.find(item=>Number(item.player_id)===Number(id)),projection=state.projections[id]||{},fixtures=cardFixtures(player),minutes=expectedMinutes(projection),points=finiteMetric(state.multiProjections[id]?.xPts3??projection.xPts),captain=Number(state.plan.captain)===Number(id),vice=Number(state.plan.vice)===Number(id),transfer=state.plan.transfers.some(item=>Number(item.in.player_id)===Number(id));
- return`<button type="button" class="player player-card-v12 ${state.selected===id?'selected':''} ${transfer?'changed':''} ${minutes!==null&&minutes<80?'minutes-warning':''}" style="${clubCardStyle(player.team)}" data-player="${id}" aria-label="${esc(`${player.name}, ${points===null?'xPts unavailable':`${points.toFixed(1)} xPts`}, ${minutes===null?'expected minutes unavailable':`${Math.round(minutes)} expected minutes`}`)}"><span class="player-card-heading${captain||vice?' has-role':''}"><strong class="player-card-name" title="${esc(player.name)}">${esc(player.name)}</strong>${captain?'<span class="badge captain-badge" aria-label="Captain">C</span>':vice?'<span class="badge vice-badge" aria-label="Vice-captain">VC</span>':''}</span><span class="player-card-fixtures">${fixtures.map(item=>`<span class="player-card-fixture ${item.blank?'blank':`fdr-${item.difficulty}`}"${item.blank?'':` title="${esc(`${item.text} · FDR ${item.difficulty}`)}"`}><b>${esc(item.text)}</b></span>`).join('')}</span><span class="player-card-projection"><b class="primary-xpts">${points===null?'—':points.toFixed(1)}</b><small class="player-card-minutes">${minutes===null?'—':Math.round(minutes)} min</small></span></button>`
+ return`<span class="player-card-wrap" style="${playerCardClubStyle(player)}"><button type="button" class="player player-card-v12 ${state.selected===id?'selected':''} ${transfer?'changed':''} ${minutes!==null&&minutes<80?'minutes-warning':''}" data-player="${id}" aria-label="${esc(`${player.name}, ${points===null?'xPts unavailable':`${points.toFixed(1)} xPts`}, ${minutes===null?'expected minutes unavailable':`${Math.round(minutes)} expected minutes`}`)}"><span class="player-card-heading"><strong class="player-card-name" title="${esc(player.name)}">${esc(player.name)}</strong></span><span class="player-card-fixtures">${fixtures.map(item=>`<span class="player-card-fixture ${item.blank?'blank':`fdr-${item.difficulty}`}"${item.blank?'':` title="${esc(`${item.text} · FDR ${item.difficulty}`)}"`}><b>${esc(item.text)}</b></span>`).join('')}</span><span class="player-card-projection"><b class="primary-xpts">${points===null?'—':points.toFixed(1)}</b><small class="player-card-minutes">${minutes===null?'—':Math.round(minutes)} min</small></span></button>${captain?'<span class="player-role-badge captain-badge" aria-label="Captain">C</span>':vice?'<span class="player-role-badge vice-badge" aria-label="Vice-captain">VC</span>':''}</span>`
 }
 function plannerIntegrityErrors(plan){
  if(!plan||!Array.isArray(plan.players)||!Array.isArray(plan.starters)||!Array.isArray(plan.bench))return['Planner lineup data is incomplete.'];
