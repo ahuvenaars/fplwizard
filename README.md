@@ -16,7 +16,7 @@ Planner lineups keep player objects only in `plan.players`; starters and bench c
 
 The transfer flow's **Top 15 performers** list ranks the complete current FPL player dataset at the outgoing player's position by actual `total_points`, with price and player ID as deterministic tie-breakers. It shows the genuine top 15 before applying transfer checks; candidates that fail budget, club-limit, squad, or roster validation remain visible but disabled with a reason. The normal player search and existing transfer confirmation flow remain available.
 
-The Planner lineup uses a football-pitch layout with the goalkeeper, defenders, midfielders, and forwards in that top-to-bottom order. Compact player cards show only the player name, three upcoming fixtures, 3GW xPts, expected minutes, and C/VC badges. Cards with valid expected minutes below 80 receive an amber border; missing or invalid minutes do not trigger the warning. Cards remain text-based and do not request external shirt or player-image assets.
+The Planner lineup uses a football-pitch layout with the goalkeeper, defenders, midfielders, and forwards in that top-to-bottom order. Compact player cards have a consistent width, show three upcoming fixtures vertically, and display the xPts number, expected minutes, and C/VC badges without a horizon label. Cards with valid expected minutes below 80 receive an amber border; missing or invalid minutes do not trigger the warning. Cards remain text-based and do not request external shirt or player-image assets. The page background and cards use subtle light gradients.
 
 ## Local development
 
