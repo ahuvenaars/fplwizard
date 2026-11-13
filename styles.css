@@ -49,7 +49,7 @@ body{background:#F7F5F2;color:#151515}header{background:rgba(255,255,255,.97);bo
 .decision-view{display:grid;gap:12px}.decision-player-meta{display:flex;gap:8px;color:var(--muted);font-size:12px}.decision-player-meta span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 9px}.decision-primary{display:grid;grid-template-columns:1fr 1.2fr;gap:8px}.decision-primary>div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}.decision-primary>div:first-child{background:#F9EEF0;border-color:#E4C9CE}.decision-primary small,.decision-primary strong,.decision-minutes b,.decision-minutes span{display:block}.decision-primary small{font-size:10px;color:var(--muted)}.decision-primary strong{font-size:32px;line-height:1.1;color:#781D32}.decision-minutes b{font-size:21px}.decision-minutes span{font-size:11px;color:var(--muted)}.decision-horizons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.decision-horizons span,.decision-stat{background:#fff;border:1px solid var(--line);border-radius:11px;padding:8px}.decision-horizons span{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}.decision-horizons b{color:#151515}.decision-fixtures h4,.decision-stats h4,.transfer-decision h4{margin:0 0 7px;font-size:12px}.decision-fixture{display:grid;grid-template-columns:37px minmax(0,1fr) auto;align-items:center;gap:5px;padding:8px;border-top:1px solid var(--line);font-size:11px}.decision-fixture>span{font-weight:750}.decision-fixture small{color:var(--muted)}.decision-fixture strong{grid-column:2/4;font-size:10px;color:#781D32}.decision-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.decision-stat b,.decision-stat span,.decision-stat small{display:block}.decision-stat b{font-size:14px}.decision-stat span,.decision-stat small{font-size:10px;color:var(--muted)}.decision-stat small{margin-top:3px}.decision-stat.prominent b{font-size:21px;color:#781D32}.decision-stat.decision-trend{grid-column:span 2}.decision-stat.decision-roles{grid-column:span 2;display:flex;justify-content:space-between;gap:5px}.decision-roles span{display:flex;gap:4px;align-items:center}.decision-roles b{color:#151515}.advanced-diagnostics{margin-top:12px;padding:12px;border:1px solid #D9C8C5;border-radius:15px;background:#F7F3F1}.advanced-diagnostics h4{margin:0 0 9px;color:#6D2935;font-size:12px}.advanced-diagnostics .model-breakdown{padding:9px}.transfer-decision{padding:10px;background:#fff;border:1px solid var(--line);border-radius:13px}.transfer-gain{display:grid;grid-template-columns:1fr auto;gap:3px;padding:7px 0;border-top:1px solid var(--line);font-size:12px}.transfer-gain b{color:#781D32}.transfer-gain small{grid-column:1/-1;color:var(--muted);font-size:10px}.transfer-hit{margin:8px 0 0;color:#8A1C2B;font-size:11px;font-weight:800}#playerMenu form{max-height:min(84dvh,760px);overflow-y:auto}
 
 /* MVP40 design system and football-first Planner */
-:root{color-scheme:light;--bg:#F2F5F6;--card:#FFFFFF;--text:#172536;--muted:#667586;--accent:#147D5B;--blue:#147D5B;--bad:#B54747;--line:#DCE4E8;--positive:#19734F;--warning:#A96A17;--navy:#172536;--pitch:#236447;--player-card-width:clamp(56px,9.5vw,74px);--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:22px;--radius-sm:10px;--radius-md:16px;--radius-lg:22px;--border:1px solid var(--line);--shadow-sm:0 2px 8px #1725360d;--shadow-md:0 12px 32px #17253614;--transition:160ms ease}
+:root{color-scheme:light;--bg:#F2F5F6;--card:#FFFFFF;--text:#172536;--muted:#667586;--accent:#147D5B;--blue:#147D5B;--bad:#B54747;--line:#DCE4E8;--positive:#19734F;--warning:#A96A17;--navy:#172536;--pitch:#236447;--player-card-width:clamp(64px,11vw,84px);--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:22px;--radius-sm:10px;--radius-md:16px;--radius-lg:22px;--border:1px solid var(--line);--shadow-sm:0 2px 8px #1725360d;--shadow-md:0 12px 32px #17253614;--transition:160ms ease}
 html{scroll-behavior:smooth;scroll-padding-bottom:100px}
 body{min-width:320px;overflow-x:hidden;background:linear-gradient(135deg,#F9FBFC 0%,#F0F5F4 52%,#F7F9FA 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 header{padding:14px max(18px,calc((100vw - 1120px)/2));background:#fff;border-bottom:var(--border);box-shadow:var(--shadow-sm)}
@@ -223,13 +223,14 @@ dialog form{min-width:0}
 }
 
 /* Compact, responsive lineup cards */
-.pitch{min-height:0;gap:8px;padding:13px 10px;overflow-x:auto;overscroll-behavior-x:contain;justify-content:space-evenly}
-.line{display:grid;grid-template-columns:repeat(var(--line-count),var(--player-card-width));justify-content:center;align-items:center;gap:16px;width:max-content;min-width:100%;min-height:0;padding:8px 8px 0}
+.pitch{min-height:0;gap:8px;padding:13px 10px;overflow:hidden;justify-content:space-evenly;background:linear-gradient(145deg,#2D7455 0%,#236447 56%,#1D593F 100%)}
+.pitch:before,.pitch:after{content:none;display:none}
+.line{display:grid;grid-template-columns:repeat(var(--line-count),var(--player-card-width));justify-content:center;align-items:center;gap:8px;width:100%;min-width:0;min-height:0;padding:8px 0 0}
 .player-card-wrap{position:relative;display:block;width:var(--player-card-width);height:94px;overflow:visible}
 .player-card-v12{position:relative;display:flex;flex:0 0 var(--player-card-width);flex-direction:column;align-items:stretch;gap:0;width:var(--player-card-width);min-width:var(--player-card-width);max-width:var(--player-card-width);height:94px;min-height:94px;max-height:94px;padding:0;border:1px solid #D7E1E6;border-radius:8px;background:#fff;color:var(--text);box-shadow:none;text-align:left;white-space:normal;overflow:hidden}
 .player-card-v12:hover:not(:disabled){transform:none;background:#fff;box-shadow:none}
 .player-card-heading{position:relative;display:flex;align-items:center;justify-content:center;gap:0;width:100%;height:20px;min-height:20px;overflow:hidden;background:var(--club-name-background,#062B60)}
-.player-card-v12 .player-card-name{display:block!important;width:100%;min-width:0;min-height:0;margin:0!important;padding:0 3px;overflow:hidden;border-radius:2px;background:var(--club-name-label,transparent);color:var(--club-name-color,#fff);font-size:10px!important;font-weight:800;line-height:20px;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+.player-card-v12 .player-card-name{display:block!important;width:100%;height:20px;min-width:0;min-height:0;margin:0!important;padding:0 2px;overflow:hidden;border-radius:2px;background:var(--club-name-label,transparent);color:var(--club-name-color,#fff);font-size:clamp(7px,calc(var(--player-card-width)*.15),9px)!important;font-weight:800;line-height:8px;text-align:center;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;-webkit-line-clamp:unset}
 .player-card-wrap>.player-role-badge{position:absolute;top:-6px;right:-6px;z-index:5;display:grid;place-items:center;width:16px;height:16px;min-width:16px;padding:0;border:1px solid #fff;border-radius:50%;background:#062B60;color:#fff;font-size:9px;font-weight:900;line-height:1;pointer-events:none}
 .player-card-wrap>.player-role-badge.vice-badge{border-color:#062B60;background:#fff;color:#062B60}
 .player-card-fixtures{position:static;display:grid;grid-template-rows:repeat(3,13px);flex:none;flex-direction:column;gap:2px;width:auto;height:43px;min-width:0;margin:4px 4px 2px;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none}
@@ -243,8 +244,8 @@ dialog form{min-width:0}
 .player-card-fixture.fdr-4{border-left:2px solid #C45A5A;background:#FBE8E7;color:#9B3939}
 .player-card-fixture.fdr-5{border-left:2px solid #A51F38;background:#F4D9DD;color:#8C253B}
 .player-card-projection{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:center;gap:5px;width:auto;height:20px;min-height:20px;margin:0 2px 1px;white-space:nowrap}
-.player-card-projection .primary-xpts{overflow:hidden;padding-right:5px;border-right:1px solid #D9DDE1;color:#00865A;font-size:12px!important;font-weight:900;line-height:15px;text-overflow:ellipsis}
-.player-card-projection .player-card-minutes{flex:none;color:#606060;font-size:9px!important;font-weight:650}
+.player-card-projection .primary-xpts{flex:none;padding-right:3px;border-right:1px solid #D9DDE1;color:#00865A;font-size:clamp(8px,calc(var(--player-card-width)*.16),12px)!important;font-weight:900;line-height:15px}
+.player-card-projection .player-card-minutes{flex:none;color:#606060;font-size:clamp(6px,calc(var(--player-card-width)*.11),9px)!important;font-weight:650}
 .player-card-v12.changed{border-color:var(--accent);box-shadow:none}
 .player-card-v12.minutes-warning{border:2px solid #D49A19;box-shadow:none}
 .player-card-v12.minutes-warning.changed{box-shadow:none}
@@ -254,13 +255,17 @@ dialog form{min-width:0}
 .bench .player-card-v12{min-height:94px;border-color:#D7E1E6;background:#fff;box-shadow:none}
 .bench .player-card-v12.minutes-warning{border:2px solid #D49A19}
 @media(max-width:520px){
- .pitch{padding-right:7px;padding-left:7px}
- .line{gap:16px}
+ .pitch{padding-right:0;padding-left:0}
+ .line{gap:8px}
  .player-card-v12{padding:0}
- .player-card-v12 .player-card-name{font-size:10px!important}
  .player-card-fixture>b{font-size:9px}
- .player-card-projection{gap:1px;margin-right:0;margin-left:0}
- .player-card-projection .primary-xpts{padding-right:2px;font-size:10px!important}
- .player-card-projection .player-card-minutes{font-size:8px!important}
+ .player-card-projection{gap:1px;margin-right:1px;margin-left:1px}
+ .player-card-projection .primary-xpts{padding-right:2px}
  .bench{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:421px) and (max-width:760px){
+ .line{--player-card-width:clamp(48px,calc((100vw - 116px)/5),84px)}
+}
+@media(max-width:420px){
+ .line{--player-card-width:clamp(48px,calc((100vw - 96px)/5),84px)}
 }
