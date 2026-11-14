@@ -306,6 +306,7 @@ header .eyebrow{color:#A8C4D8}
 header h1,.header-summary .stat>b{color:#F5F8FC}
 .header-summary .stat>span{color:#B4C3D0}
 .planner-overview{display:grid;width:100%;margin:0;padding:2px 12px;border:1px solid #DCE4E8;border-radius:12px;background:#fff;color:var(--text);box-shadow:none}
+.planner-overview[hidden]{display:none}
 .planner-overview-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:46px;padding:5px 0}
 .planner-overview-row+.planner-overview-row{border-top:1px solid #E5EAED}
 .planner-overview-top{gap:8px}
