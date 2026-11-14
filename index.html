@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#F2F5F6">
   <title>FPL Planner</title>
-  <link rel="stylesheet" href="styles.css?v=46">
+  <link rel="stylesheet" href="styles.css?v=47">
   <link rel="stylesheet" href="free-hit.css?v=41">
 </head>
 <body>
@@ -18,31 +18,29 @@
       <section id="summary" class="summary header-summary" aria-label="Manager statistics"></section>
     </header>
     <main>
-      <nav id="gwNav" class="gw-nav"></nav>
-      <section class="planner-controls">
-        <label>FT at start<input id="freeTransfers" type="number" inputmode="numeric" min="0" max="5" step="1" value="1"></label>
-        <div id="hitStatus" class="hit-status"></div>
-        <button id="syncCurrentTeam" type="button" class="secondary">Sync current team</button>
-        <span id="syncStatus" class="sync-status" role="status" aria-live="polite"></span>
+      <nav id="gwNav" class="gw-nav" aria-label="Select Gameweek"></nav>
+      <section class="planner-overview" aria-label="Gameweek planning summary">
+        <div class="planner-overview-row planner-overview-top">
+          <label class="planner-gameweek-label" for="plannerGameweek"><span class="visually-hidden">Select Gameweek</span><select id="plannerGameweek" aria-label="Select Gameweek"></select></label>
+          <div class="planner-overview-actions">
+            <span id="syncStatus" class="sync-status" role="status" aria-live="polite"></span>
+            <button id="syncCurrentTeam" type="button" class="text-action">Sync team</button>
+            <button id="bestXi" type="button" class="secondary">Best XI</button>
+          </div>
+        </div>
+        <div class="planner-overview-row planner-overview-transfers">
+          <label class="free-transfers-control">FT at start<span class="free-transfer-stepper"><button type="button" class="secondary" data-ft-step="-1" aria-label="Decrease free transfers">−</button><input id="freeTransfers" type="number" inputmode="numeric" min="0" max="5" step="1" value="1" aria-label="Free transfers at start"><button type="button" class="secondary" data-ft-step="1" aria-label="Increase free transfers">+</button></span></label>
+          <div id="hitStatus" class="hit-status"></div>
+        </div>
+        <div id="lineupScore" class="planner-overview-row planner-overview-score"></div>
+      </section>
+      <section class="planner-field">
+        <div id="pitch" class="pitch" aria-label="Starting XI football pitch"></div>
+        <div id="bench" class="bench"></div>
       </section>
       <section id="planSummary" class="plan-summary"></section>
       <section id="alerts"></section>
       <div id="switchPrompt" class="switch-prompt" hidden><span>Select a player to switch.</span><button id="cancelSwitch" type="button" class="secondary">Cancel</button></div>
-      <section class="card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">PLANNED LINEUP</p>
-            <h2 id="lineupTitle">Lineup</h2>
-          </div>
-          <button id="bestXi" class="secondary">Best XI</button>
-        </div>
-        <div id="lineupScore" class="score-strip"></div>
-        <div class="lineup-zone-heading"><div><p class="eyebrow">STARTING XI</p><span>Projected formation</span></div><span class="lineup-formation-hint">Tap a player for actions</span></div>
-        <div id="pitch" class="pitch" aria-label="Starting XI football pitch"></div>
-        <div class="bench-zone-heading"><div><p class="eyebrow">BENCH</p><span>Four substitutes</span></div><small>Tap two players to swap</small></div>
-        <div id="bench" class="bench"></div>
-        <p class="hint lineup-hint">Select a player to view details, captaincy and transfer actions. Choose Switch to exchange two lineup positions.</p>
-      </section>
       <section id="freeHitView" class="free-hit-view" hidden>
         <div class="section-head">
           <div>
@@ -157,6 +155,6 @@
       <button type="button" id="confirmTransfer">Add to plan</button>
     </form>
   </dialog>
-  <script type="module" src="src/app.js?v=48"></script>
+  <script type="module" src="src/app.js?v=49"></script>
 </body>
 </html>

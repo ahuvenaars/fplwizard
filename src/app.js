@@ -21,7 +21,11 @@ function renderSummary(){
  const m=state.manager,bank=state.plan?plannedBank():Number(m.bank||0),ranks=(state.performanceHistory||[]).filter(row=>Number.isFinite(row.rank)&&row.rank>0),previous=ranks.at(-2),latest=ranks.at(-1),movement=previous&&latest?previous.rank-latest.rank:0,trend=movement?`<span class="rank-trend ${movement>0?'improved':'declined'}" aria-label="${movement>0?'Improved':'Dropped'} ${Math.abs(movement).toLocaleString()} places from GW${previous.gw} to GW${latest.gw}" title="${movement>0?'Improved':'Dropped'} ${Math.abs(movement).toLocaleString()} places from GW${previous.gw} to GW${latest.gw}">${movement>0?'↑':'↓'}</span>`:'';
  $('#summary').innerHTML=`<div class="stat"><b>${Number(m.overall_rank||0).toLocaleString()}${trend}</b><span>Overall rank</span></div><div class="stat"><b>£${Number(m.team_value||0).toFixed(1)}m</b><span>Budget</span></div><div class="stat"><b>£${bank.toFixed(1)}m</b><span>${state.plan?.transfers?.length?'Planned bank':'Bank'}</span></div>`
 }
-function renderGwNav(){$('#gwNav').innerHTML=state.events.map(e=>`<button data-gw="${e.id}" class="${e.id===state.gw?'active':''}">GW${e.id}</button>`).join('');$('#gwNav').onclick=e=>{const b=e.target.closest('[data-gw]');if(b){const gw=Number(b.dataset.gw);if(state.activeView==='freehit')openFreeHit(gw);else openGw(gw)}}}
+function renderGwNav(){
+ $('#gwNav').innerHTML=state.events.map(e=>`<button data-gw="${e.id}" class="${e.id===state.gw?'active':''}">GW${e.id}</button>`).join('');
+ const plannerGameweek=$('#plannerGameweek');if(plannerGameweek){plannerGameweek.innerHTML=state.events.map(e=>`<option value="${e.id}">Gameweek ${e.id}</option>`).join('');plannerGameweek.value=String(state.gw);plannerGameweek.onchange=()=>openGw(Number(plannerGameweek.value))}
+ $('#gwNav').onclick=e=>{const b=e.target.closest('[data-gw]');if(b){const gw=Number(b.dataset.gw);if(state.activeView==='freehit')openFreeHit(gw);else openGw(gw)}}
+}
 function firstPlanningGw(){return Number(state.events?.[0]?.id||state.gw||1)}
 function currentActualFreeTransfers(manager=state.manager){
   const m=manager||{};
@@ -40,7 +44,7 @@ function rolledFreeTransfers(gw,plans=db.managers?.[state.managerId]?.plans||{},
   return ft;
 }
 async function openGw(gw){
- clearSwitchMode();state.gw=Number(gw);renderGwNav();$('#lineupTitle').textContent=`Gameweek ${gw}`;
+ clearSwitchMode();state.gw=Number(gw);renderGwNav();
  let squadSource;try{squadSource=await endpoints.squad(state.managerId,Math.min(gw,state.manager.current_gameweek))}catch{squadSource=await endpoints.squad(state.managerId,state.manager.current_gameweek)}
  const officialSquad=squadSource?.squad;
  inspectPlanIntegrity({players:officialSquad,starters:(officialSquad||[]).filter(player=>Number(player.position_order)<=11).map(player=>player.player_id),bench:(officialSquad||[]).filter(player=>Number(player.position_order)>11).map(player=>player.player_id)},`official squad response GW${squadSource?.gameweek||gw}`);
@@ -167,12 +171,12 @@ async function syncCurrentTeam(){
   for(const key of Object.keys(db))delete db[key];Object.assign(db,syncedDb);
   state.manager=refreshedManager;state.fixtures=fixtures;state.players=universe.players;state.details={...state.details,...freshDetails};
   state.completedEvents=completedEvents;state.events=upcomingEvents;state.gw=gw;state.plan=syncedPlans[gw];state.baseSquad=state.plan.players.map(player=>({...player}));state.baseSquadGameweek=officialGw;
-  $('#teamName').textContent=refreshedManager.team_name;$('#lineupTitle').textContent=`Gameweek ${gw}`;
+  $('#teamName').textContent=refreshedManager.team_name;
   setupReview();renderGwNav();calculate();render();
   status.className='sync-status sync-success';
   status.textContent=`Official squad source: GW${officialGw}. Planner projections: GW${gw}. Synced at ${new Date().toLocaleString()}. Refreshed fixtures, ${state.players.length} players, and 1, 3 and 5 GW projections. The Planner baseline was rebuilt from the official squad; incompatible future Planner plans were cleared.`;
  }catch(error){status.className='sync-status sync-error';status.textContent=`Sync failed: ${error.message}`}
- finally{button.disabled=false;button.textContent='Sync current team'}
+ finally{button.disabled=false;button.textContent='Sync team'}
 }
 async function hydrate(){const ids=state.plan.players.map(p=>p.player_id);await Promise.allSettled(ids.map(async id=>{if(!state.details[id])state.details[id]=await endpoints.player(id)}))}
 function fixture(p){const f=state.fixtures.find(x=>Number(x.gameweek)===state.gw&&(x.home===p.team||x.away===p.team));return f?{...f,difficulty:f.home===p.team?f.home_difficulty:f.away_difficulty,opponent:f.home===p.team?f.away:f.home,home:f.home===p.team}:null}
@@ -639,6 +643,7 @@ async function renderTransferConsequence(){
  }catch(error){if(request!==transferPreviewRequest)return;$('#transferConsequence').innerHTML=`<div class="consequence"><div class="alert">Could not load target details: ${esc(error.message)}</div>${after<0?`<p class="over">£${Math.abs(after).toFixed(1)}m over budget.</p>`:''}</div>`;$('#confirmTransfer').disabled=true}
 }
 $('#freeTransfers').oninput=()=>{if(!state.plan)return;state.plan.freeTransfers=Math.max(0,Math.min(5,Math.floor(Number($('#freeTransfers').value)||0)));updatePlanMeta();invalidateFuturePlans();persist();renderPlanningStatus();renderPlanSummary()};
+document.querySelectorAll('[data-ft-step]').forEach(button=>button.addEventListener('click',()=>{const input=$('#freeTransfers');if(Number(button.dataset.ftStep)>0)input.stepUp();else input.stepDown();input.dispatchEvent(new Event('input',{bubbles:true}))}));
 $('#targetTeam').onchange=renderTargetPlayers;
 $('#targetPlayer').onchange=renderTransferConsequence;
 $('#topPerformersBtn').onclick=()=>{state.transferTop15Only=!state.transferTop15Only;renderTargetPlayers();};
@@ -730,7 +735,7 @@ function setActiveView(view){
  const previous=state.activeView;if(previous!==view)clearSwitchMode();state.activeView=view;updateSwitchPrompt();document.querySelectorAll('.bottom-nav button').forEach(button=>button.classList.toggle('active',button.dataset.view===view));
  document.querySelectorAll('main > :not(#reviewView):not(#performanceView):not(#calibrationView):not(#freeHitView)').forEach(element=>element.hidden=view!=='planner');
  $('#freeHitView').hidden=view!=='freehit';$('#reviewView').hidden=view!=='review';$('#performanceView').hidden=view!=='performance';$('#calibrationView').hidden=view!=='calibration';
- $('#gwNav').hidden=view!=='planner'&&view!=='freehit';
+ $('#gwNav').hidden=view!=='freehit';
  if(view==='planner'&&state.gw&&(previous==='freehit'||previous==='review'||previous==='performance'||previous==='calibration'))openGw(state.gw);
  if(view==='freehit'&&state.gw)openFreeHit(state.gw);
  if(view==='review'){const gw=Number($('#reviewGw').value||state.completedEvents?.[0]?.id);if(gw)openReview(gw)}
@@ -864,6 +869,8 @@ renderGwNav=function(){
  const nav=$('#gwNav');
  nav.setAttribute('aria-label','Select Gameweek');
  nav.innerHTML=state.events.map(event=>`<button type="button" data-gw="${event.id}" class="${Number(event.id)===Number(state.gw)?'active':''}" aria-pressed="${Number(event.id)===Number(state.gw)}">GW${event.id}</button>`).join('');
+ const plannerGameweek=$('#plannerGameweek');
+ if(plannerGameweek){plannerGameweek.innerHTML=state.events.map(event=>`<option value="${event.id}">Gameweek ${event.id}</option>`).join('');plannerGameweek.value=String(state.gw);plannerGameweek.onchange=()=>openGw(Number(plannerGameweek.value))}
  nav.onclick=event=>{
   const button=event.target.closest('[data-gw]');
   if(!button)return;

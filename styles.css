@@ -299,3 +299,46 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px}
  .header-summary .stat>span{font-size:9px}
  .bench{--bench-card-width:clamp(48px,calc((100vw - 96px)/5),84px)}
 }
+
+/* Compact Planner overview */
+header{background:#12263A;border-bottom-color:#263B50;box-shadow:none;color:#F5F8FC}
+header .eyebrow{color:#A8C4D8}
+header h1,.header-summary .stat>b{color:#F5F8FC}
+.header-summary .stat>span{color:#B4C3D0}
+.planner-overview{display:grid;width:100%;margin:0;padding:2px 12px;border:1px solid #DCE4E8;border-radius:12px;background:#fff;color:var(--text);box-shadow:none}
+.planner-overview-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:46px;padding:5px 0}
+.planner-overview-row+.planner-overview-row{border-top:1px solid #E5EAED}
+.planner-overview-top{gap:8px}
+.planner-gameweek-label{position:relative;display:flex;align-items:center;min-width:0;margin:0}
+#plannerGameweek{width:auto;min-width:0;margin:0;padding:4px 20px 4px 0;border:0;border-radius:0;appearance:none;background:transparent;color:#172F4B;font-size:17px;font-weight:850;line-height:1.2}
+.planner-gameweek-label:after{position:absolute;right:3px;color:#667586;content:"⌄";font-size:13px;pointer-events:none}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+.planner-overview-actions{position:relative;display:flex;flex:none;align-items:center;gap:7px}
+.planner-overview-actions #syncCurrentTeam{padding:7px 5px;background:transparent;color:#52687D;font-size:12px;font-weight:700}
+.planner-overview-actions #bestXi{min-height:32px;padding:6px 11px;border:0;border-radius:8px;background:#EAF0F2;color:#172F4B;font-size:12px;font-weight:800}
+.planner-overview-actions .sync-status:not(:empty){position:absolute;z-index:10;top:calc(100% + 3px);right:0;display:block;width:max-content;max-width:min(90vw,360px);padding:8px 10px;border:1px solid #DCE4E8;border-radius:8px;background:#fff;color:#52687D;font-size:10px;line-height:1.35;white-space:normal;box-shadow:0 3px 12px #17253618}
+.planner-overview-transfers{flex-wrap:wrap;justify-content:flex-start;gap:clamp(8px,2vw,16px) clamp(14px,4vw,36px)}
+.free-transfers-control{display:flex;flex:none;align-items:center;gap:9px;margin:0;color:#52687D;font-size:12px;font-weight:750}
+.free-transfer-stepper{display:flex;align-items:center;gap:3px}
+.free-transfer-stepper button{display:grid;place-items:center;width:25px;height:25px;min-height:25px;padding:0;border:1px solid #DCE4E8;border-radius:7px;background:#F6F8F9;color:#344B61;font-size:16px;line-height:1}
+.free-transfer-stepper input{width:26px;height:26px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#172F4B;font-size:14px;font-weight:850;text-align:center;appearance:textfield}
+.free-transfer-stepper input::-webkit-inner-spin-button,.free-transfer-stepper input::-webkit-outer-spin-button{margin:0;appearance:none}
+.hit-status{display:grid;flex:1 1 110px;gap:1px;min-width:0;max-width:100%;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.hit-status b{color:#19734F;font-size:13px;line-height:1.2}
+.hit-status small{color:#667586;font-size:10px;line-height:1.2}
+.hit-status.hit b{color:#B54747}
+.planner-overview-score{justify-content:space-between}
+.planner-overview-score>span{display:flex;align-items:baseline;gap:7px;color:#687B8D;font-size:11px}
+.planner-overview-score>span>b{color:#172F4B;font-size:17px;font-weight:850;line-height:1}
+.planner-field{margin-top:8px}
+.planner-field>.pitch{margin-top:0}
+#gwNav[hidden]{display:none}
+@media(max-width:420px){
+ .planner-overview{padding-right:9px;padding-left:9px}
+ .planner-overview-row{gap:7px;min-height:44px}
+ .planner-overview-transfers{flex-wrap:wrap;justify-content:space-between;gap:6px 10px}
+ .free-transfers-control{gap:6px;font-size:11px}
+ .hit-status{margin-left:auto}
+ .planner-overview-score>span{gap:4px;font-size:10px}
+ .planner-overview-score>span>b{font-size:15px}
+}
